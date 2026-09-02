@@ -57,7 +57,7 @@ class Trace:
         except OSError:
             self.enabled = False
 
-    def __enter__(self) -> "Trace":
+    def __enter__(self) -> Trace:
         self.event("start")
         return self
 

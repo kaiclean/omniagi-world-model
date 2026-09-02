@@ -496,6 +496,18 @@
     {
       "path": "agentic-uncensored-16gb-2026.md",
       "reason": "external research note outside this repository"
+    },
+    {
+      "path": "omniagi/line_counter.py",
+      "reason": "hypothetical example file created by the reader while following docs/tutorial-add-a-tool.md"
+    },
+    {
+      "path": "tools/line_counter.md",
+      "reason": "hypothetical example file created by the reader while following docs/tutorial-add-a-tool.md"
+    },
+    {
+      "path": "tests/test_line_counter.py",
+      "reason": "hypothetical example file created by the reader while following docs/tutorial-add-a-tool.md"
     }
   ]
 }

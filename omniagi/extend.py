@@ -21,13 +21,15 @@ import json
 import os
 import shutil
 import tempfile
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 from . import docgen
+from .hashing import refresh_manifest_entries
 from .memory import append_changelog
 from .paths import ENV_VAR, harness_root, resolve
 from .registry import RegistryError, load_registry, registry_path
@@ -140,6 +142,11 @@ def extend_tool(
     # regenerate every derived table so nothing drifts
     changed = docgen.generate()
     report.step(f"4b. regenerated derived docs: {', '.join(changed) if changed else 'no change'}")
+
+    # A logged extension may legitimately rewrite generated constitution files.
+    # Re-record only those hashes, so unrelated drift is still detected.
+    rehashed = refresh_manifest_entries(changed)
+    report.step(f"4c. manifest re-recorded: {', '.join(rehashed) if rehashed else 'no change'}")
 
     # 5. verify by reading back from disk
     try:

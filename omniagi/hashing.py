@@ -152,3 +152,30 @@ def check_manifest(registry: Registry | None = None) -> CheckResult:
         "constitution hashes match memory/manifest.json",
         "constitution hash drift detected",
     )
+
+
+def refresh_manifest_entries(rel_paths: list[str]) -> list[str]:
+    """Re-record the hashes of ``rel_paths`` only, leaving the rest untouched.
+
+    Used after a legitimate, logged change (self-extension regenerating derived
+    constitution files).  Refreshing the *whole* manifest would silently bless
+    unrelated tampering, so only the files actually rewritten are updated.
+    """
+    recorded = read_manifest()
+    if recorded is None:
+        return []
+    reg = load_registry()
+    updated: list[str] = []
+    for rel in rel_paths:
+        if rel not in reg.constitution_files:
+            continue
+        digest = hash_file(rel)
+        if recorded["files"].get(rel) != digest:
+            recorded["files"][rel] = digest
+            updated.append(rel)
+    if updated:
+        recorded["generated_on"] = date.today().isoformat()
+        manifest_path().write_text(
+            json.dumps(recorded, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+    return updated

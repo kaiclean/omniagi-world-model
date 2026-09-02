@@ -1,0 +1,47 @@
+# Mirrors .github/workflows/ci.yml so drift is caught locally, before CI.
+#   pip install pre-commit && pre-commit install
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-json
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: [--fix]
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.2
+    hooks:
+      - id: mypy
+        files: ^omniagi/
+        additional_dependencies: []
+
+  - repo: local
+    hooks:
+      - id: omniagi-docs
+        name: generated docs are current
+        entry: python3 -m omniagi.cli docs --check
+        language: system
+        pass_filenames: false
+
+      - id: omniagi-check
+        name: harness integrity and constitution
+        entry: python3 -m omniagi.cli check
+        language: system
+        pass_filenames: false
+
+      - id: pytest
+        name: pytest
+        entry: python3 -m pytest -q
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

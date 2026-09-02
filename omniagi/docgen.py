@@ -14,8 +14,8 @@ registry/markdown drift a CI failure rather than a slow rot.
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 from .paths import resolve
 from .registry import Registry, load_registry

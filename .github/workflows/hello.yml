@@ -1,0 +1,20 @@
+name: Hello
+
+# Minimal isolation probe. If this fails with "startup_failure" while its YAML
+# is valid, the cause is repository- or account-level (Actions disabled, or no
+# runner minutes) rather than anything in the workflow itself.
+
+"on":
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  hello:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prove the runner starts
+        run: echo "runner ok"

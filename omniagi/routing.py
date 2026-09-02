@@ -41,7 +41,7 @@ class Candidate:
             "engine": self.engine,
             "score": round(self.score, 4),
             "priority": self.priority,
-            "matched": {k: v for k, v in sorted(self.matched.items())},
+            "matched": dict(sorted(self.matched.items())),
         }
 
 

@@ -31,21 +31,21 @@ class CheckResult:
         return self.status is not Status.FAIL
 
     @classmethod
-    def passed(cls, name: str, summary: str, details: list[str] | None = None) -> "CheckResult":
+    def passed(cls, name: str, summary: str, details: list[str] | None = None) -> CheckResult:
         return cls(name=name, status=Status.PASS, summary=summary, details=details or [])
 
     @classmethod
-    def warned(cls, name: str, summary: str, details: list[str] | None = None) -> "CheckResult":
+    def warned(cls, name: str, summary: str, details: list[str] | None = None) -> CheckResult:
         return cls(name=name, status=Status.WARN, summary=summary, details=details or [])
 
     @classmethod
-    def failed(cls, name: str, summary: str, details: list[str] | None = None) -> "CheckResult":
+    def failed(cls, name: str, summary: str, details: list[str] | None = None) -> CheckResult:
         return cls(name=name, status=Status.FAIL, summary=summary, details=details or [])
 
     @classmethod
     def from_errors(
         cls, name: str, errors: list[str], ok_summary: str, fail_summary: str
-    ) -> "CheckResult":
+    ) -> CheckResult:
         if errors:
             return cls.failed(name, fail_summary, errors)
         return cls.passed(name, ok_summary)
