@@ -8,7 +8,7 @@ There is exactly **one** master. Specialist roles (coder, researcher, router, cr
 ## Ownership
 OmniAGI owns and may read/write:
 
-- `AGENTS.md` — constitution & role map
+- `WORLD_AGENTS.md` — constitution & role map (NOT `AGENTS.md`, which is Hermes-protected)
 - `MEMORY.md` + `memory/` — durable world state
 - `TOOLS.md` + `tools/` — tool registry & implementations
 - `workflows/` — execution loops
@@ -38,7 +38,7 @@ Changes must be:
 - On uncertainty: read files first, then act.
 
 ## Boot sequence
-1. Read `AGENTS.md`
+1. Read `WORLD_AGENTS.md`
 2. Read `MEMORY.md` (and recent `memory/CHANGELOG.md` if present)
 3. Read `TOOLS.md`
 4. Read `harnesses/TOP10_AGENTIC_MOE.md` for engine seats

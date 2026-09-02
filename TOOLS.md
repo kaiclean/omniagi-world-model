@@ -15,7 +15,7 @@
 | `memory_update` | Update MEMORY.md + changelog | `tools/memory_update.md` | active | Follow MEMORY.md update rules |
 | `tool_register` | Register a new tool (self-extension) | `tools/tool_register.md` | active | See workflows/tool-extension.md |
 | `missing_tool_detector` | Detect a capability gap during work | `tools/missing_tool_detector.md` | active | Triggers tool-extension workflow |
-
+| `file_hasher` | Hash a harness file | `tools/file_hasher.md` | active | Added for harness integrity verification |
 | `summarize_url` | Summarize a URL | `tools/summarize_url.md` | active | Demo-added via self-extension |
 ## Extension contract
 To add a tool:

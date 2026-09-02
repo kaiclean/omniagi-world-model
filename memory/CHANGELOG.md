@@ -1,3 +1,5 @@
 - 2026-09-02 tool_added: summarize_url (self-extension demo) verified=True
 - 2026-09-02 tool_added: summarize_url (self-extension demo) verified=True
 - 2026-09-02 tool_added: summarize_url (self-extension demo) verified=True
+- 2026-09-02 tool_added: summarize_url (self-extension demo) verified=True
+- 2026-09-02 tool_added: summarize_url (self-extension demo) verified=True
