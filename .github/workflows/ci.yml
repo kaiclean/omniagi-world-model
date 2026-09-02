@@ -1,6 +1,6 @@
 name: OmniAGI Harness Integrity
 
-on:
+"on":
   push:
     branches: [main]
   pull_request:
