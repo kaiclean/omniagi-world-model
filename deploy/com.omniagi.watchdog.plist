@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.omniagi.watchdog</string>
+
+  <!-- Edit these paths for your machine. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/omniagi</string>
+    <string>watch</string>
+    <string>--once</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/CHANGE_ME/omniagi-world-model</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>OMNIAGI_ROOT</key>
+    <string>/Users/CHANGE_ME/omniagi-world-model</string>
+    <key>PATH</key>
+    <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+  </dict>
+
+  <!-- Every 15 minutes. launchd coalesces missed runs after wake, which is the
+       behaviour we want: check on resume rather than skip silently. -->
+  <key>StartInterval</key>
+  <integer>900</integer>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>ProcessType</key>
+  <string>Background</string>
+
+  <key>StandardOutPath</key>
+  <string>/Users/CHANGE_ME/Library/Logs/omniagi-watchdog.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/CHANGE_ME/Library/Logs/omniagi-watchdog.log</string>
+</dict>
+</plist>

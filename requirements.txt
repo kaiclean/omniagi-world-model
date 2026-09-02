@@ -1,0 +1,8 @@
+# Runtime dependencies for the OmniAGI harness.
+#
+# There are none: the harness runs on the Python standard library alone so a
+# fresh checkout can be verified anywhere without a network round-trip.
+#
+# Optional: install jsonschema to enable full JSON Schema validation of
+# registry/harness.json (the referential-integrity checks always run).
+#   pip install -e ".[schema]"

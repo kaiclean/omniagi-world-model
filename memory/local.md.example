@@ -1,0 +1,25 @@
+# memory/local.md — machine-local state (gitignored)
+
+Copy this file to `memory/local.md`. It is deliberately **not** tracked: it
+holds volatile, host-specific and personal state that must never land in a
+public repository or in the durable `MEMORY.md`.
+
+Nothing here is authoritative. Anything that survives a machine change belongs
+in `MEMORY.md` instead.
+
+## Host
+
+- Harness root: (path on this machine — prefer setting `OMNIAGI_ROOT`)
+- Machine: (model / RAM)
+- Disk free: (value, YYYY-MM-DD — expires fast, re-check before relying on it)
+
+## Local inference endpoints
+
+- Ollama: (up/down, YYYY-MM-DD)
+- LM Studio: (up/down, YYYY-MM-DD)
+- Override probe targets with `OMNIAGI_LOCAL_ENDPOINTS=http://127.0.0.1:11434,...`
+
+## Credentials
+
+Never write credential *values* here. Record only which environment variable is
+expected, e.g. `OMNIAGI_API_KEY` / `OMNIAGI_BASE_URL`.

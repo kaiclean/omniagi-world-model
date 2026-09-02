@@ -6,3 +6,18 @@ __pycache__/
 .env
 *.log
 .cache/
+
+# Run traces and local-only state
+runs/
+memory/local.md
+memory/watchdog.log
+
+# Build / tooling
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
