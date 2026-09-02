@@ -1,0 +1,379 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/kaiclean/omniagi-world-model/registry/schema.json",
+  "title": "OmniAGI harness registry",
+  "type": "object",
+  "required": [
+    "version",
+    "master",
+    "constitution_files",
+    "non_negotiables",
+    "agents",
+    "tools",
+    "seats",
+    "routing",
+    "escalation",
+    "freshness",
+    "link_exemptions"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "master": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "role",
+        "spec",
+        "constitution"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "const": "master"
+        },
+        "spec": {
+          "type": "string"
+        },
+        "constitution": {
+          "type": "string"
+        }
+      }
+    },
+    "constitution_files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "non_negotiables": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "statement",
+          "check"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "statement": {
+            "type": "string"
+          },
+          "check": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "agents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "role",
+          "purpose",
+          "spec",
+          "default_seat"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "const": "specialist"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "spec": {
+            "type": "string"
+          },
+          "default_seat": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "spec",
+          "status",
+          "script",
+          "notes"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "spec": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "deprecated"
+            ]
+          },
+          "script": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "seats": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "engine",
+          "rank",
+          "tier",
+          "role",
+          "relative_cost",
+          "context_tokens",
+          "confidence",
+          "provenance"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "engine": {
+            "type": "string"
+          },
+          "rank": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "cloud",
+              "local"
+            ]
+          },
+          "role": {
+            "type": "string"
+          },
+          "relative_cost": {
+            "type": "number",
+            "minimum": 0
+          },
+          "context_tokens": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "verified",
+              "cited",
+              "estimated"
+            ]
+          },
+          "provenance": {
+            "type": "object",
+            "required": [
+              "source",
+              "benchmark",
+              "measured_on",
+              "verified_on"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "source": {
+                "type": "string"
+              },
+              "source_url": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "benchmark": {
+                "type": "string"
+              },
+              "measured_on": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "verified_on": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "required": [
+        "default",
+        "rules"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "default": {
+          "type": "object",
+          "required": [
+            "specialist",
+            "seat",
+            "rationale"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "specialist": {
+              "type": "string"
+            },
+            "seat": {
+              "type": "string"
+            },
+            "rationale": {
+              "type": "string"
+            }
+          }
+        },
+        "rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "specialist",
+              "seat",
+              "priority",
+              "keywords"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "specialist": {
+                "type": "string"
+              },
+              "seat": {
+                "type": "string"
+              },
+              "priority": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "keywords": {
+                "type": "object",
+                "minProperties": 1,
+                "additionalProperties": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "escalation": {
+      "type": "object",
+      "required": [
+        "confidence_threshold",
+        "max_attempts",
+        "ladder"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "confidence_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "max_attempts": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "ladder": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "required": [
+        "max_evidence_age_days"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "max_evidence_age_days": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "link_exemptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "reason"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 10
+          }
+        }
+      }
+    }
+  }
+}

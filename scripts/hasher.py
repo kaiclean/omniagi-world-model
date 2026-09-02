@@ -1,11 +1,24 @@
-import hashlib
-from pathlib import Path
+#!/usr/bin/env python3
+"""Deprecated wrapper: use `omniagi hash <path>`.
 
-def hash_file(rel_path):
-    p = Path("/Users/kaileanhard/research/omniagi-world-model") / rel_path
-    if not p.exists(): return "Error: File not found"
-    return hashlib.sha256(p.read_bytes()).hexdigest()
+Exits non-zero when the file is missing instead of printing an error string
+with a success status.
+"""
+
+from __future__ import annotations
+
+import sys
+
+import _bootstrap  # noqa: F401  (sys.path bootstrap)
+
+from omniagi.hashing import HashError, hash_file
 
 if __name__ == "__main__":
-    import sys
-    print(hash_file(sys.argv[1]))
+    if len(sys.argv) != 2:
+        print("usage: hasher.py <harness-relative-path>", file=sys.stderr)
+        sys.exit(2)
+    try:
+        print(hash_file(sys.argv[1]))
+    except HashError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        sys.exit(1)

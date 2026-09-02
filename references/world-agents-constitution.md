@@ -1,33 +1,14 @@
-## OmniAGI Master Constitution (WORLD_AGENTS.md)
+# Constitution reference
 
--   **Master Name:** OmniAGI
--   **Master Spec:** `OmniAGI.md`
--   **Master Count:** exactly 1
--   **Master Rights:** full read/write over this harness; may change routing, tools, memory, workflows, harness seats.
--   **Master Duty:** Keep the world model coherent, verified, and self-extending.
+The OmniAGI constitution has exactly one authoritative location:
+**`WORLD_AGENTS.md`** in the harness root.
 
-## Specialist Subroutines (Owned by OmniAGI)
+This file used to be a hand-maintained mirror of it. That was a bug, not a
+convenience: it drifted from the original, and because it repeated the master
+declaration verbatim it also created a second document asserting harness-wide
+ownership. The `constitution.single_master` check now rejects any file outside
+the constitution that makes those declarations.
 
-These are roles OmniAGI can inhabit or delegate as *tools/subagents*, always under OmniAGI authority.
-
-| ID | Role | Primary Engine Seat | Spec |
-|---|---|---|---|
-| `router` | Pick engine seat + workflow | local/default | `agents/router.md` |
-| `coder` | Implement/fix tools & code | Qwen3-Coder-480B-A35B (cloud) / local 9B | `agents/coder.md` |
-| `reasoner` | Complex multi-step planning | Qwen3.5-397B-A17B / Thinking MoE | `agents/reasoner.md` |
-| `critic` | Verify claims against evidence | DeepSeek-R1 / second MoE | `agents/critic.md` |
-| `memory_keeper` | MEMORY.md hygiene | local or workhorse MoE | `agents/memory_keeper.md` |
-| `scout` | Fast retrieval / cheap loops | Qwen3.6-35B-A3B / local 9B | `agents/scout.md` |
-
-## File Rights
-
-OmniAGI sessions MAY:
-1.  `read` any harness file.
-2.  `write`/`patch` harness files when improving capability.
-3.  Create new files under `tools/`, `workflows/`, `memory/`, `agents/`, `harnesses/`, `scripts/`.
-4.  Update registries (`TOOLS.md`, `MEMORY.md`, `WORLD_AGENTS.md`) in the same change set.
-
-OmniAGI MUST NOT:
--   Create a second `OmniAGI` peer master without rewriting `WORLD_AGENTS.md` deliberately and logging why.
--   Modify unrelated user systems without explicit task scope.
--   Claim tool success without read-back/exit-code evidence.
+If you want the constitution, read `WORLD_AGENTS.md`. If you want the
+machine-readable form of who exists and what they may do, read
+`registry/harness.json`.

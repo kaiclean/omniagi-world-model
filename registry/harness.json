@@ -1,0 +1,501 @@
+{
+  "$schema": "./schema.json",
+  "version": 1,
+  "description": "Canonical OmniAGI harness registry. This file is the single source of truth for the master, specialist subroutines, tools, engine seats and routing rules. Markdown tables that describe any of these are GENERATED from this file - never edit the generated blocks by hand.",
+  "master": {
+    "id": "omniagi",
+    "name": "OmniAGI",
+    "role": "master",
+    "spec": "OmniAGI.md",
+    "constitution": "WORLD_AGENTS.md"
+  },
+  "constitution_files": [
+    "OmniAGI.md",
+    "WORLD_AGENTS.md",
+    "TOOLS.md",
+    "MEMORY.md",
+    "workflows/agent-loop.md",
+    "workflows/tool-extension.md",
+    "workflows/model-routing.md",
+    "workflows/memory-consolidation.md"
+  ],
+  "non_negotiables": [
+    {
+      "id": "single_master",
+      "statement": "Never invent a second master.",
+      "check": "check_single_master"
+    },
+    {
+      "id": "no_simulated_success",
+      "statement": "Never simulate tool success - real read-back / exit codes only.",
+      "check": "check_no_simulated_success"
+    },
+    {
+      "id": "tool_extension_protocol",
+      "statement": "Missing tool -> follow workflows/tool-extension.md.",
+      "check": "check_tool_extension_protocol"
+    },
+    {
+      "id": "smallest_patch",
+      "statement": "Prefer the smallest patch that restores capability.",
+      "check": "check_smallest_patch"
+    },
+    {
+      "id": "read_before_act",
+      "statement": "On uncertainty: read files first, then act.",
+      "check": "check_read_before_act"
+    }
+  ],
+  "agents": [
+    {
+      "id": "router",
+      "role": "specialist",
+      "purpose": "Pick engine seat + workflow",
+      "spec": "agents/router.md",
+      "default_seat": "qwen3.5-122b-a10b"
+    },
+    {
+      "id": "coder",
+      "role": "specialist",
+      "purpose": "Implement/fix tools & code",
+      "spec": "agents/coder.md",
+      "default_seat": "qwen3-coder-480b-a35b"
+    },
+    {
+      "id": "reasoner",
+      "role": "specialist",
+      "purpose": "Hard multi-step planning and problem decomposition",
+      "spec": "agents/reasoner.md",
+      "default_seat": "qwen3.5-397b-a17b"
+    },
+    {
+      "id": "critic",
+      "role": "specialist",
+      "purpose": "Verify claims against evidence",
+      "spec": "agents/critic.md",
+      "default_seat": "deepseek-r1"
+    },
+    {
+      "id": "memory_keeper",
+      "role": "specialist",
+      "purpose": "MEMORY.md hygiene and consolidation",
+      "spec": "agents/memory_keeper.md",
+      "default_seat": "qwen3.5-122b-a10b"
+    },
+    {
+      "id": "scout",
+      "role": "specialist",
+      "purpose": "Fast retrieval and cheap execution loops",
+      "spec": "agents/scout.md",
+      "default_seat": "qwen3.6-35b-a3b"
+    }
+  ],
+  "tools": [
+    {
+      "id": "file_read",
+      "name": "Read any harness file",
+      "spec": "tools/file_read.md",
+      "status": "active",
+      "script": null,
+      "notes": "Use read_file or cat equivalent"
+    },
+    {
+      "id": "file_write",
+      "name": "Write/overwrite harness file",
+      "spec": "tools/file_write.md",
+      "status": "active",
+      "script": null,
+      "notes": "Verify by read-back"
+    },
+    {
+      "id": "file_patch",
+      "name": "Targeted edit",
+      "spec": "tools/file_patch.md",
+      "status": "active",
+      "script": null,
+      "notes": "Prefer over overwrite when surgical"
+    },
+    {
+      "id": "shell",
+      "name": "Run a shell command",
+      "spec": "tools/shell.md",
+      "status": "active",
+      "script": "omniagi/shell.py",
+      "notes": "Allowlisted, timeout-bounded, no shell interpolation. See docs/threat-model.md"
+    },
+    {
+      "id": "web_search",
+      "name": "Web lookup",
+      "spec": "tools/web_search.md",
+      "status": "active",
+      "script": null,
+      "notes": "External facts / current state"
+    },
+    {
+      "id": "model_route",
+      "name": "Route request to engine seat",
+      "spec": "tools/model_route.md",
+      "status": "active",
+      "script": "omniagi/routing.py",
+      "notes": "Weighted scoring + escalation ladder; omniagi route"
+    },
+    {
+      "id": "memory_update",
+      "name": "Update MEMORY.md + changelog",
+      "spec": "tools/memory_update.md",
+      "status": "active",
+      "script": "omniagi/memory.py",
+      "notes": "Deduplicating changelog append; omniagi memory"
+    },
+    {
+      "id": "tool_register",
+      "name": "Register a new tool (self-extension)",
+      "spec": "tools/tool_register.md",
+      "status": "active",
+      "script": "omniagi/extend.py",
+      "notes": "See workflows/tool-extension.md; omniagi extend"
+    },
+    {
+      "id": "missing_tool_detector",
+      "name": "Detect a capability gap during work",
+      "spec": "tools/missing_tool_detector.md",
+      "status": "active",
+      "script": null,
+      "notes": "Triggers tool-extension workflow"
+    },
+    {
+      "id": "file_hasher",
+      "name": "Hash a harness file",
+      "spec": "tools/file_hasher.md",
+      "status": "active",
+      "script": "omniagi/hashing.py",
+      "notes": "SHA-256; backs the memory/manifest.json drift check"
+    },
+    {
+      "id": "summarize_url",
+      "name": "Summarize a URL",
+      "spec": "tools/summarize_url.md",
+      "status": "active",
+      "script": null,
+      "notes": "Added via the self-extension protocol"
+    },
+    {
+      "id": "seat_health",
+      "name": "Probe engine seat availability",
+      "spec": "tools/seat_health.md",
+      "status": "active",
+      "script": "omniagi/health.py",
+      "notes": "Decides cloud vs local fallback; never simulates a seat"
+    }
+  ],
+  "seats": [
+    {
+      "id": "qwen3.5-397b-a17b",
+      "engine": "Qwen3.5-397B-A17B",
+      "rank": 1,
+      "tier": "cloud",
+      "role": "Primary deep reasoner / planner",
+      "relative_cost": 8.0,
+      "context_tokens": 262144,
+      "confidence": "cited",
+      "provenance": {
+        "source": "Hermes ascension models_dev_cache.json (~212 providers / ~7493 models)",
+        "source_url": null,
+        "benchmark": "catalog capability flags (tools=true, reasoning=true)",
+        "measured_on": "2026-09-02",
+        "verified_on": "2026-09-02"
+      }
+    },
+    {
+      "id": "qwen3-coder-480b-a35b",
+      "engine": "Qwen3-Coder-480B-A35B-Instruct",
+      "rank": 2,
+      "tier": "cloud",
+      "role": "Code and tool-implementation engine",
+      "relative_cost": 9.0,
+      "context_tokens": 262144,
+      "confidence": "cited",
+      "provenance": {
+        "source": "Hermes ascension models_dev_cache.json",
+        "source_url": null,
+        "benchmark": "catalog capability flags (tools=true), agentic coding posture",
+        "measured_on": "2026-09-02",
+        "verified_on": "2026-09-02"
+      }
+    },
+    {
+      "id": "qwen3-235b-a22b-thinking",
+      "engine": "Qwen3-235B-A22B-Thinking-2507",
+      "rank": 3,
+      "tier": "cloud",
+      "role": "General high-stakes problem solver",
+      "relative_cost": 6.0,
+      "context_tokens": 262144,
+      "confidence": "cited",
+      "provenance": {
+        "source": "Hermes ascension models_dev_cache.json",
+        "source_url": null,
+        "benchmark": "catalog capability flags (tools=true, reasoning=true)",
+        "measured_on": "2026-09-02",
+        "verified_on": "2026-09-02"
+      }
+    },
+    {
+      "id": "nemotron-3-ultra",
+      "engine": "NVIDIA Nemotron-3-Ultra",
+      "rank": 4,
+      "tier": "cloud",
+      "role": "Long-horizon agent / research engine",
+      "relative_cost": 7.0,
+      "context_tokens": 262144,
+      "confidence": "estimated",
+      "provenance": {
+        "source": "fireworks catalog entry nemotron-3-ultra-nvfp4",
+        "source_url": null,
+        "benchmark": "vendor positioning only - no independent measurement",
+        "measured_on": "2026-09-02",
+        "verified_on": "2026-09-02"
+      }
+    },
+    {
+      "id": "qwen3.5-122b-a10b",
+      "engine": "Qwen3.5-122B-A10B",
+      "rank": 5,
+      "tier": "cloud",
+      "role": "Workhorse reasoner",
+      "relative_cost": 3.0,
+      "context_tokens": 262144,
+      "confidence": "cited",
+      "provenance": {
+        "source": "Hermes ascension models_dev_cache.json",
+        "source_url": null,
+        "benchmark": "catalog capability flags (tools=true, reasoning=true)",
+        "measured_on": "2026-09-02",
+        "verified_on": "2026-09-02"
+      }
+    },
+    {
+      "id": "qwen3.6-35b-a3b",
+      "engine": "Qwen3.6-35B-A3B",
+      "rank": 6,
+      "tier": "cloud",
+      "role": "Fast MoE scout",
+      "relative_cost": 1.0,
+      "context_tokens": 262144,
+      "confidence": "estimated",
+      "provenance": {
+        "source": "Hermes ascension models_dev_cache.json; local IQ2 experiments in prior research",
+        "source_url": null,
+        "benchmark": "no independent agentic benchmark recorded",
+        "measured_on": "2026-09-02",
+        "verified_on": "2026-09-02"
+      }
+    },
+    {
+      "id": "qwen3-next-80b-a3b",
+      "engine": "Qwen3-Next-80B-A3B",
+      "rank": 7,
+      "tier": "cloud",
+      "role": "High-throughput agent loop engine",
+      "relative_cost": 2.0,
+      "context_tokens": 262144,
+      "confidence": "cited",
+      "provenance": {
+        "source": "Hermes ascension models_dev_cache.json",
+        "source_url": null,
+        "benchmark": "catalog capability flags (tools=true)",
+        "measured_on": "2026-09-02",
+        "verified_on": "2026-09-02"
+      }
+    },
+    {
+      "id": "glm-4.7-flash",
+      "engine": "GLM-4.7-Flash (30B-A3B)",
+      "rank": 8,
+      "tier": "cloud",
+      "role": "Structured agent / dashboard-ops engine",
+      "relative_cost": 1.5,
+      "context_tokens": 131072,
+      "confidence": "cited",
+      "provenance": {
+        "source": "~/research/agentic-uncensored-16gb-2026.md",
+        "source_url": null,
+        "benchmark": "tau2-Bench ~79.5 (reported, not re-run here)",
+        "measured_on": "2026-09-02",
+        "verified_on": "2026-09-02"
+      }
+    },
+    {
+      "id": "deepseek-r1",
+      "engine": "DeepSeek-V3.1 / R1",
+      "rank": 9,
+      "tier": "cloud",
+      "role": "Alternate brain for verification / second opinion",
+      "relative_cost": 5.0,
+      "context_tokens": 131072,
+      "confidence": "cited",
+      "provenance": {
+        "source": "Hermes ascension models_dev_cache.json",
+        "source_url": null,
+        "benchmark": "catalog capability flags (reasoning=true)",
+        "measured_on": "2026-09-02",
+        "verified_on": "2026-09-02"
+      }
+    },
+    {
+      "id": "qwen3.5-9b-hauhaucs",
+      "engine": "Qwen3.5-9B-HauhauCS-Aggressive",
+      "rank": 10,
+      "tier": "local",
+      "role": "Local always-on executor when cloud engines are unavailable",
+      "relative_cost": 0.0,
+      "context_tokens": 131072,
+      "confidence": "cited",
+      "provenance": {
+        "source": "~/research/agentic-uncensored-16gb-2026.md",
+        "source_url": null,
+        "benchmark": "BFCL-V4 66.1, TAU2 79.1 (reported, not re-run here)",
+        "measured_on": "2026-09-02",
+        "verified_on": "2026-09-02"
+      }
+    }
+  ],
+  "routing": {
+    "default": {
+      "specialist": "router",
+      "seat": "qwen3.5-122b-a10b",
+      "rationale": "no strong specialist signal"
+    },
+    "rules": [
+      {
+        "specialist": "critic",
+        "seat": "deepseek-r1",
+        "priority": 10,
+        "keywords": {
+          "verify": 5,
+          "verification": 5,
+          "audit": 5,
+          "critique": 5,
+          "validate": 4,
+          "review": 4,
+          "confirm": 4,
+          "assert": 3,
+          "check": 3,
+          "test": 3,
+          "prove": 3,
+          "evidence": 3,
+          "double-check": 5
+        }
+      },
+      {
+        "specialist": "coder",
+        "seat": "qwen3-coder-480b-a35b",
+        "priority": 20,
+        "keywords": {
+          "implement": 5,
+          "refactor": 5,
+          "debug": 5,
+          "patch": 4,
+          "code": 4,
+          "compile": 4,
+          "script": 4,
+          "bug": 4,
+          "build": 3,
+          "fix": 4,
+          "write": 3,
+          "function": 3,
+          "api": 2,
+          "tool": 1
+        }
+      },
+      {
+        "specialist": "reasoner",
+        "seat": "qwen3.5-397b-a17b",
+        "priority": 30,
+        "keywords": {
+          "architecture": 5,
+          "strategy": 5,
+          "design": 5,
+          "plan": 5,
+          "reason": 4,
+          "analyze": 4,
+          "decompose": 4,
+          "tradeoff": 4,
+          "think": 3,
+          "why": 2,
+          "approach": 3,
+          "roadmap": 4
+        }
+      },
+      {
+        "specialist": "memory_keeper",
+        "seat": "qwen3.5-122b-a10b",
+        "priority": 40,
+        "keywords": {
+          "memory": 4,
+          "remember": 5,
+          "consolidate": 5,
+          "recall": 5,
+          "forget": 4,
+          "stale": 4,
+          "changelog": 4,
+          "durable": 3,
+          "summarize": 2
+        }
+      },
+      {
+        "specialist": "scout",
+        "seat": "qwen3.6-35b-a3b",
+        "priority": 50,
+        "keywords": {
+          "search": 5,
+          "lookup": 5,
+          "retrieve": 5,
+          "scout": 5,
+          "grep": 5,
+          "find": 4,
+          "scan": 4,
+          "list": 3,
+          "locate": 4,
+          "fetch": 3,
+          "browse": 3,
+          "look up": 5
+        }
+      }
+    ]
+  },
+  "escalation": {
+    "confidence_threshold": 0.45,
+    "max_attempts": 3,
+    "ladder": [
+      "qwen3.6-35b-a3b",
+      "qwen3.5-122b-a10b",
+      "qwen3.5-397b-a17b"
+    ]
+  },
+  "freshness": {
+    "max_evidence_age_days": 180
+  },
+  "link_exemptions": [
+    {
+      "path": "AGENTS.md",
+      "reason": "Hermes-protected filename, deliberately absent - the constitution lives in WORLD_AGENTS.md"
+    },
+    {
+      "path": "memory/local.md",
+      "reason": "gitignored machine-local state; memory/local.md.example is the tracked template"
+    },
+    {
+      "path": "memory/watchdog.log",
+      "reason": "gitignored runtime artifact written by the watchdog"
+    },
+    {
+      "path": "models_dev_cache.json",
+      "reason": "external Hermes catalog artifact outside this repository"
+    },
+    {
+      "path": "agentic-uncensored-16gb-2026.md",
+      "reason": "external research note outside this repository"
+    }
+  ]
+}

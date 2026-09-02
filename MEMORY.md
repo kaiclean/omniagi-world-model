@@ -1,34 +1,51 @@
 # MEMORY.md — OmniAGI Durable World State
 
-> This file is the long-term memory of OmniAGI. Unlike scratch logs, entries here must be:
-> - **durable** (still true in a week)
-> - **declarative** (facts, not instructions-to-self)
-> - **compact** (high signal)
-> Anti-staleness: entries that become stale MUST be corrected or removed here and noted in `memory/CHANGELOG.md`.
+> Long-term memory of OmniAGI. Entries must be **durable** (still true in a
+> week), **declarative** (facts, not instructions-to-self) and **compact**.
+>
+> Anti-staleness is no longer an honour system: every entry carries an expiry
+> date and `omniagi memory` (and therefore CI) **fails** on facts that are past
+> it. Correct or remove them, and log the change in `memory/CHANGELOG.md`.
 
 ## Format
-Each entry: a fact line. Optional `# tag` for category. No bullet spam.
 
-## Seeded world facts (2026-09-02)
-# identity
-OmniAGI is the sole master of this world model harness; specialist seats are owned subroutines, never peer masters.
-# harness
-Harness root: ~/research/omniagi-world-model/ on macOS (kaileanhard). Constitution: WORLD_AGENTS.md. Master spec: OmniAGI.md.
-# engines
-Top-10 engine seats live in harnesses/TOP10_AGENTIC_MOE.md. Primary cloud reasoner: Qwen3.5-397B-A17B. Coding seat: Qwen3-Coder-480B-A35B. Local fallback: Qwen3.5-9B-HauhauCS-Aggressive (LM Studio / Ollama; currently DOWN).
-# machine
-Host is MacBook Air 16GB; disk free ~4.3GB as of 2026-09-02 — avoid large model downloads without explicit reclaim.
-# tooling
-Self-extension protocol: workflows/tool-extension.md. Tool registry: TOOLS.md. Agents must verify writes via read-back or exit code.
-# hermes
-Hermes profile: ascension. AGENTS.md is a protected filename in Hermes; world-model constitution lives in WORLD_AGENTS.md to stay editable by OmniAGI.
+Each entry is a row: `id | tag | fact | established | expires | source`.
+Use `never` for structural facts that do not decay. Dates are `YYYY-MM-DD`.
 
-## Research summaries
-# agentic_moe
-Agentic MoE research (2025–2026) converges on three axes: (1) MoE as backbone for agentic LLMs (Kimi K2 1T/32B, Nemotron 3 Nano/Super with LatentMoE + NVFP4), optimizing throughput per active param; (2) MoE inside agentic RL — PA-MoE uses phase-aware routing to fix simplicity bias by preserving temporally consistent expert specialization; (3) agentic routing/orchestration (ACRouter, SWE-Router) where an LLM dynamically selects models/experts per step using trajectory context, with Bayes-optimal temporal escalation. Core insight: token/step-level static routing is suboptimal for agentic tasks; temporally-aware routing is strictly better. Efficiency (active params, inference throughput) is the primary economic driver for agentic workloads. Benchmarks now evaluate multi-turn execution with regret/cost metrics (CodeRouterBench, TwinRouterBench). No single paper yet unifies all three axes.
+**Machine-specific and personal state does not belong here.** Hostnames,
+usernames, absolute home paths and storage figures go in the local memory file,
+which is gitignored — `memory/local.md.example` shows the shape. The
+`memory.hygiene` check enforces this.
+
+## Entries
+
+| id | tag | fact | established | expires | source |
+|---|---|---|---|---|---|
+| identity-single-master | identity | OmniAGI is the sole master of this world model harness; specialist seats are owned subroutines, never peer masters. | 2026-09-02 | never | WORLD_AGENTS.md |
+| harness-source-of-truth | harness | registry/harness.json is the single source of truth for tools, agents, engine seats and routing; every markdown table describing them is generated from it. | 2026-09-02 | never | registry/harness.json |
+| harness-layout | harness | Constitution lives in WORLD_AGENTS.md (not AGENTS.md, which is Hermes-protected); master spec is OmniAGI.md. | 2026-09-02 | never | WORLD_AGENTS.md |
+| harness-root-resolution | harness | The harness root is resolved from the OMNIAGI_ROOT environment variable, falling back to the package parent. No module may hardcode a host path. | 2026-09-02 | never | omniagi/paths.py |
+| verification-entrypoint | tooling | `omniagi check` is the read-only verification entry point; it is idempotent and must never dirty the working tree. | 2026-09-02 | never | omniagi/selfcheck.py |
+| tooling-self-extension | tooling | The self-extension protocol is implemented in omniagi/extend.py and aborts before logging success if read-back verification fails. | 2026-09-02 | never | workflows/tool-extension.md |
+| routing-is-scored | routing | Routing is weighted keyword scoring with unique rule priorities, a confidence value and an escalation ladder - not first-match substring scanning. | 2026-09-02 | never | omniagi/routing.py |
+| engines-primary-seats | engines | Primary cloud reasoner seat is Qwen3.5-397B-A17B; coding seat is Qwen3-Coder-480B-A35B; local fallback seat is Qwen3.5-9B-HauhauCS. | 2026-09-02 | 2027-03-01 | harnesses/TOP10_AGENTIC_MOE.md |
+| engines-availability-probed | engines | Seat availability is probed, never assumed; when no seat is reachable the harness reports a blocker instead of producing model output. | 2026-09-02 | never | omniagi/health.py |
+| research-agentic-moe | agentic_moe | Agentic MoE research (2025-2026) converges on three axes: MoE as backbone for agentic LLMs; MoE inside agentic RL (phase-aware routing preserving temporally consistent expert specialization); and agentic routing/orchestration selecting models per step from trajectory context. Core insight: token/step-level static routing is suboptimal for agentic tasks; temporally-aware routing is strictly better. | 2026-09-02 | 2027-03-01 | references/ + prior session research |
+| hermes-protected-filename | hermes | AGENTS.md is a protected filename in Hermes, so the world-model constitution lives in WORLD_AGENTS.md to stay editable by OmniAGI. | 2026-09-02 | never | WORLD_AGENTS.md |
 
 ## Update rules
-- Only OmniAGI writes here (or a memory_keeper subroutine acting on its behalf).
-- Before writing, read current state to avoid duplicate/contradictory entries.
-- When correcting a fact, also append a one-liner to `memory/CHANGELOG.md` (what changed, date).
-- Do NOT store session progress logs / TODO state here — those go in scratch files if needed.
+
+- Only OmniAGI writes here (or a `memory_keeper` subroutine acting on its behalf).
+- Read the current state before writing, to avoid duplicate/contradictory entries.
+- When correcting a fact, append a one-liner to `memory/CHANGELOG.md`
+  (`omniagi memory --log "..."` deduplicates automatically).
+- Do NOT store session progress logs or TODO state here.
+- Volatile host figures and endpoint status belong in the local file, not here.
+
+## Commands
+
+```bash
+omniagi memory            # audit: expiry, hygiene, changelog duplicates
+omniagi memory --list     # structured entries as JSON
+omniagi memory --log "corrected engines-primary-seats"
+```
