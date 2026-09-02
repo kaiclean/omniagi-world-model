@@ -1,0 +1,38 @@
+[Unit]
+Description=OmniAGI harness integrity watchdog
+Documentation=https://github.com/kaiclean/omniagi-world-model
+After=network-online.target
+
+[Service]
+Type=oneshot
+
+# --- edit these paths for your host ---
+User=omniagi
+Environment=OMNIAGI_ROOT=/srv/omniagi-world-model
+WorkingDirectory=/srv/omniagi-world-model
+ExecStart=/usr/local/bin/omniagi watch --once
+# --------------------------------------
+
+# The watchdog only reads and appends to its own log, so deny everything else.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/omniagi-world-model/memory
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+
+# A non-zero exit means the harness failed its own integrity check. Let it be
+# recorded as a unit failure so `systemctl --failed` and any alerting on
+# OnFailure= surface it, instead of it disappearing into a log nobody reads.
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

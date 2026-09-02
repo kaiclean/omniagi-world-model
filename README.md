@@ -31,7 +31,7 @@ If it ever dirties the tree, that is a bug.
 | `omniagi docs` | Regenerate every table derived from the registry. `--check` fails when stale. |
 | `omniagi extend <tool_id>` | Run the six-step self-extension protocol. `--demo` runs it in a throwaway copy. |
 | `omniagi memory` | Audit durable memory for expiry and hygiene. |
-| `omniagi watch --once` | One watchdog health check; without `--once` it loops with backoff. |
+| `omniagi watch --once` | One watchdog health check; without `--once` it loops with backoff. See [deploy/](deploy/README.md). |
 | `omniagi seats` | List engine seats with provenance and availability. |
 
 The legacy `scripts/*.py` entry points still work as thin wrappers.
@@ -59,6 +59,7 @@ workflows/                 # agent-loop, tool-extension, model-routing, memory-c
 harnesses/                 # Top-10 agentic MoE engine seats
 agents/                    # specialist subroutines (owned by master)
 docs/                      # architecture, threat model, ADRs, tutorial
+deploy/                    # systemd and launchd units for the watchdog
 scripts/                   # thin wrappers over the omniagi CLI
 references/                # generated evidence mirrors
 ```

@@ -1,0 +1,20 @@
+[Unit]
+Description=Run the OmniAGI watchdog every 15 minutes
+Documentation=https://github.com/kaiclean/omniagi-world-model
+
+[Timer]
+# First run shortly after boot, then every 15 minutes.
+OnBootSec=2min
+OnUnitActiveSec=15min
+
+# Spread the load and avoid every host checking on the same second.
+RandomizedDelaySec=60
+
+# If the machine was asleep, run once on resume rather than skipping silently —
+# a missed integrity check is indistinguishable from a passing one.
+Persistent=true
+
+Unit=omniagi-watchdog.service
+
+[Install]
+WantedBy=timers.target

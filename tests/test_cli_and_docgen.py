@@ -104,6 +104,14 @@ def test_watch_once_returns_health_status(temp_harness: Path) -> None:
     assert main(["watch", "--once"]) == 1
 
 
+def test_watch_exposes_every_flag_the_watchdog_supports(temp_harness: Path, capsys) -> None:
+    """A flag documented in deploy/ but missing here would break in production."""
+    assert main(["watch", "--once", "--interval", "60", "--max-backoff", "600"]) == 0
+    assert main(["watch", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["result"] in {"PASS", "WARN", "FAIL"}
+
+
 def test_seats_lists_every_registered_seat(temp_harness: Path, capsys, registry) -> None:
     assert main(["seats"]) == 0
     out = capsys.readouterr().out

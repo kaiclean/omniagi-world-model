@@ -45,7 +45,7 @@ derives everything else from it, and CI enforces the correspondence.
 | Verification | `integrity`, `constitution`, `hashing`, `memory` | Named checks over real filesystem state. |
 | Decision | `routing`, `health` | Which specialist, which seat, is it reachable. |
 | Execution | `shell`, `extend`, `adapters` | Bounded side effects. |
-| Observation | `trace`, `watchdog` | JSONL run traces; periodic health enforcement. |
+| Observation | `trace`, `watchdog` | JSONL run traces; periodic health enforcement (see [deploy/](../deploy/README.md)). |
 | Surface | `cli` | `omniagi <check\|route\|hash\|docs\|extend\|memory\|watch\|seats>`. |
 
 ## Data flow: routing a task

@@ -12,6 +12,7 @@ import sys
 from typing import Any
 
 from . import __version__
+from .watchdog import DEFAULT_INTERVAL_SECONDS, DEFAULT_MAX_BACKOFF_SECONDS
 
 
 def _cmd_check(args: argparse.Namespace) -> int:
@@ -154,7 +155,9 @@ def _cmd_watch(args: argparse.Namespace) -> int:
         argv.append("--once")
     if args.strict:
         argv.append("--strict")
-    argv += ["--interval", str(args.interval)]
+    if args.json:
+        argv.append("--json")
+    argv += ["--interval", str(args.interval), "--max-backoff", str(args.max_backoff)]
     return watchdog_main(argv)
 
 
@@ -220,9 +223,21 @@ def build_parser() -> argparse.ArgumentParser:
     mem.set_defaults(func=_cmd_memory)
 
     watch = sub.add_parser("watch", help="run the self-healing watchdog")
-    watch.add_argument("--once", action="store_true")
-    watch.add_argument("--strict", action="store_true")
-    watch.add_argument("--interval", type=float, default=900.0)
+    watch.add_argument("--once", action="store_true", help="run a single check and exit")
+    watch.add_argument("--strict", action="store_true", help="treat warnings as failures")
+    watch.add_argument(
+        "--interval",
+        type=float,
+        default=DEFAULT_INTERVAL_SECONDS,
+        help="seconds between checks when healthy",
+    )
+    watch.add_argument(
+        "--max-backoff",
+        type=float,
+        default=DEFAULT_MAX_BACKOFF_SECONDS,
+        help="maximum delay between checks after repeated failure",
+    )
+    watch.add_argument("--json", action="store_true", help="emit the report as JSON")
     watch.set_defaults(func=_cmd_watch)
 
     seats = sub.add_parser("seats", help="probe engine-seat availability")

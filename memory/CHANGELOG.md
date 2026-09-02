@@ -14,3 +14,6 @@ which prefixes the date and skips an identical consecutive entry.
 - 2026-09-02 tests: 204 pytest cases covering routing goldens, constitution negatives, hashing failure modes, shell refusals, memory expiry, self-extension round-trip and CLI exit codes (91.8% coverage)
 - 2026-09-02 ci: matrix (ubuntu+macos x py3.10-3.13), pinned action SHAs, contents:read permissions, ruff+mypy+pip-audit, hasher output asserted as 64 hex chars, clean-tree guarantee
 - 2026-09-02 docs: architecture, threat model, ADR log (single master, registry as source of truth, fail loudly), add-a-tool tutorial; README rewritten around the omniagi CLI
+- 2026-09-02 adapters: reference seat adapter now exercised end-to-end against a stub OpenAI-compatible server (17 tests, coverage omit removed); malformed and non-HTTP responses must raise, never coerce
+- 2026-09-02 deploy: systemd service+timer and launchd plist for the watchdog, validated by tests that parse each unit with the real CLI parser
+- 2026-09-02 cli: 'omniagi watch' gained --max-backoff and --json, found missing by the deploy-unit tests

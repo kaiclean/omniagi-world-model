@@ -52,7 +52,6 @@ addopts = "-q"
 
 [tool.coverage.run]
 source = ["omniagi"]
-omit = ["omniagi/adapters.py"]
 
 [tool.coverage.report]
 fail_under = 70
