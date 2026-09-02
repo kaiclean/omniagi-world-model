@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from .paths import resolve
+from .persistence import atomic_write_text, file_lock
 from .results import CheckResult
 
 MEMORY_FILE = "MEMORY.md"
@@ -181,35 +182,37 @@ def dedupe_changelog(path: Path | None = None) -> int:
     target = path or resolve(CHANGELOG_FILE)
     if not target.is_file():
         return 0
-    lines = target.read_text(encoding="utf-8").splitlines()
-    kept: list[str] = []
-    removed = 0
-    for line in lines:
-        if kept and line.strip() and line == kept[-1]:
-            removed += 1
-            continue
-        kept.append(line)
-    if removed:
-        target.write_text("\n".join(kept) + "\n", encoding="utf-8")
+    with file_lock(target):
+        lines = target.read_text(encoding="utf-8").splitlines()
+        kept: list[str] = []
+        removed = 0
+        for line in lines:
+            if kept and line.strip() and line == kept[-1]:
+                removed += 1
+                continue
+            kept.append(line)
+        if removed:
+            atomic_write_text(target, "\n".join(kept) + "\n")
     return removed
 
 
 def append_changelog(message: str, path: Path | None = None, today: date | None = None) -> bool:
     """Append a dated changelog line, skipping an identical consecutive entry.
 
-    Returns ``True`` when a line was written.
+    Returns ``True`` when a line was written. The read-decide-append cycle runs
+    under an advisory lock so two concurrent writers cannot both append.
     """
     target = path or resolve(CHANGELOG_FILE)
     target.parent.mkdir(parents=True, exist_ok=True)
     entry = f"- {(today or date.today()).isoformat()} {message.strip()}"
-    existing = target.read_text(encoding="utf-8").splitlines() if target.is_file() else []
-    for line in reversed(existing):
-        if line.strip():
-            if line.strip() == entry:
-                return False
-            break
-    with target.open("a", encoding="utf-8") as handle:
-        handle.write(entry + "\n")
+    with file_lock(target):
+        existing = target.read_text(encoding="utf-8").splitlines() if target.is_file() else []
+        for line in reversed(existing):
+            if line.strip():
+                if line.strip() == entry:
+                    return False
+                break
+        atomic_write_text(target, "\n".join([*existing, entry]) + "\n")
     return True
 
 

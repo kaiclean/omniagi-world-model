@@ -159,6 +159,103 @@
           },
           "notes": {
             "type": "string"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "contract": {
+            "type": "object",
+            "required": [
+              "summary",
+              "inputs",
+              "outputs",
+              "errors"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "summary": {
+                "type": "string"
+              },
+              "inputs": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "name",
+                    "type",
+                    "description"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "string",
+                        "integer",
+                        "number",
+                        "boolean",
+                        "object",
+                        "array",
+                        "null"
+                      ]
+                    },
+                    "required": {
+                      "type": "boolean"
+                    },
+                    "description": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "outputs": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "name",
+                    "type",
+                    "description"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "string",
+                        "integer",
+                        "number",
+                        "boolean",
+                        "object",
+                        "array",
+                        "null"
+                      ]
+                    },
+                    "required": {
+                      "type": "boolean"
+                    },
+                    "description": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
           }
         }
       }
@@ -198,6 +295,9 @@
             ]
           },
           "role": {
+            "type": "string"
+          },
+          "provider": {
             "type": "string"
           },
           "relative_cost": {
@@ -371,6 +471,179 @@
           "reason": {
             "type": "string",
             "minLength": 10
+          }
+        }
+      }
+    },
+    "providers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "tier",
+          "base_url_var",
+          "api_key_vars",
+          "chat_path",
+          "health"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_-]+$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "cloud",
+              "local"
+            ]
+          },
+          "base_url_var": {
+            "type": "string"
+          },
+          "base_url_default": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "api_key_vars": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "chat_path": {
+            "type": "string"
+          },
+          "health": {
+            "type": "string",
+            "enum": [
+              "credential",
+              "endpoint"
+            ]
+          }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "risk",
+          "description"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "risk": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "policies": {
+      "type": "object",
+      "required": [
+        "default_approval",
+        "capability_rules"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "default_approval": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "master",
+            "human"
+          ]
+        },
+        "capability_rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "capability",
+              "approval",
+              "rationale"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "capability": {
+                "type": "string"
+              },
+              "approval": {
+                "type": "string",
+                "enum": [
+                  "auto",
+                  "master",
+                  "human"
+                ]
+              },
+              "rationale": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "required": [
+        "default"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "default": {
+          "type": "object",
+          "required": [
+            "max_steps",
+            "max_seconds",
+            "max_retries",
+            "max_cost"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "max_steps": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "max_seconds": {
+              "type": "number",
+              "minimum": 1
+            },
+            "max_retries": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "max_cost": {
+              "type": "number",
+              "minimum": 0
+            }
           }
         }
       }

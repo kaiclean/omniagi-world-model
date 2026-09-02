@@ -18,6 +18,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from .paths import resolve
+from .persistence import atomic_write_text
 from .registry import Registry, load_registry
 from .results import CheckResult
 
@@ -141,6 +142,69 @@ def render_non_negotiables(reg: Registry) -> str:
     )
 
 
+def render_capabilities_table(reg: Registry) -> str:
+    from .policy import approval_for
+
+    rows = [
+        [
+            f"`{cap['id']}`",
+            cap["risk"],
+            approval_for(cap["id"], reg),
+            cap["description"],
+        ]
+        for cap in reg.capabilities
+    ]
+    return _table(["Capability", "Risk", "Approval", "Description"], rows)
+
+
+def render_providers_table(reg: Registry) -> str:
+    rows = []
+    for provider in reg.providers:
+        creds = ", ".join(f"`{var}`" for var in provider.get("api_key_vars", [])) or "—"
+        rows.append(
+            [
+                f"`{provider['id']}`",
+                provider["tier"],
+                provider["health"],
+                provider.get("base_url_default") or "—",
+                creds,
+            ]
+        )
+    return _table(
+        ["Provider", "Tier", "Health probe", "Default base URL", "Credential variables"], rows
+    )
+
+
+def render_tool_contracts(reg: Registry) -> str:
+    sections: list[str] = []
+    for tool in reg.tools:
+        contract = tool.get("contract")
+        if not contract:
+            continue
+        lines = [f"### `{tool['id']}`", "", contract["summary"], ""]
+        inputs = contract.get("inputs", [])
+        if inputs:
+            lines.append("_Inputs:_")
+            for field in inputs:
+                flag = "required" if field.get("required") else "optional"
+                lines.append(
+                    f"- `{field['name']}` ({field['type']}, {flag}) — {field['description']}"
+                )
+            lines.append("")
+        outputs = contract.get("outputs", [])
+        if outputs:
+            lines.append("_Outputs:_")
+            for field in outputs:
+                lines.append(f"- `{field['name']}` ({field['type']}) — {field['description']}")
+            lines.append("")
+        errors = contract.get("errors", [])
+        if errors:
+            lines.append("_Raises:_ " + "; ".join(errors) + ".")
+            lines.append("")
+        sections.append("\n".join(lines).rstrip())
+    return "\n\n".join(sections)
+
+
 # -- block registry ------------------------------------------------------------
 
 Renderer = Callable[[Registry], str]
@@ -159,6 +223,11 @@ BLOCKS: dict[str, list[tuple[str, Renderer]]] = {
     "references/tools-registry.md": [("tools-reference", render_tools_reference)],
     "references/agent-specs-summary.md": [("agents-reference", render_agents_reference)],
     "references/top10-moe-engines.md": [("seats-reference", render_seats_reference)],
+    "references/tool-contracts.md": [("tool-contracts", render_tool_contracts)],
+    "references/capabilities.md": [
+        ("capabilities-table", render_capabilities_table),
+        ("providers-table", render_providers_table),
+    ],
 }
 
 
@@ -200,7 +269,7 @@ def generate(check_only: bool = False, registry: Registry | None = None) -> list
         if rendered != current:
             changed.append(rel_path)
             if not check_only:
-                target.write_text(rendered, encoding="utf-8")
+                atomic_write_text(target, rendered)
     return changed
 
 

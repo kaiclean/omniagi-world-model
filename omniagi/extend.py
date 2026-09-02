@@ -32,6 +32,7 @@ from . import docgen
 from .hashing import refresh_manifest_entries
 from .memory import append_changelog
 from .paths import ENV_VAR, harness_root, resolve
+from .persistence import atomic_write_json, atomic_write_text, file_lock
 from .registry import RegistryError, load_registry, registry_path
 
 DEMO_TOOL_ID = "demo_url_summarizer"
@@ -39,6 +40,32 @@ DEMO_TOOL_ID = "demo_url_summarizer"
 
 class ExtensionError(RuntimeError):
     """Raised when the self-extension protocol cannot complete."""
+
+
+class _Transaction:
+    """Snapshot-and-restore guard for a set of files.
+
+    Self-extension touches several files (the spec, the registry, every derived
+    doc and the manifest). If any step fails - including the read-back
+    verification - the whole change must be undone, or the harness is left in a
+    partial state that fails its own checks. Every file is snapshotted before it
+    is written and restored on rollback (deleted if it did not exist before).
+    """
+
+    def __init__(self) -> None:
+        self._snapshots: dict[Path, bytes | None] = {}
+
+    def track(self, path: Path | str) -> None:
+        target = Path(path)
+        if target not in self._snapshots:
+            self._snapshots[target] = target.read_bytes() if target.exists() else None
+
+    def rollback(self) -> None:
+        for target, original in self._snapshots.items():
+            if original is None:
+                target.unlink(missing_ok=True)
+            else:
+                atomic_write_text(target, original.decode("utf-8"))
 
 
 @dataclass
@@ -110,58 +137,91 @@ def extend_tool(
     spec_path = resolve(spec_rel)
     if spec_path.exists():
         raise ExtensionError(f"spec already exists on disk but is unregistered: {spec_rel}")
-    invoke = f"- CLI: `python3 -m omniagi.{Path(script).stem}`" if script else "- (document the invocation)"
-    spec_path.parent.mkdir(parents=True, exist_ok=True)
-    spec_path.write_text(
-        SPEC_TEMPLATE.format(
-            tool_id=tool_id, today=date.today().isoformat(), purpose=purpose, invoke=invoke
-        ),
-        encoding="utf-8",
-    )
-    report.step(f"2. wrote spec {spec_rel} ({spec_path.stat().st_size} bytes)")
-
-    # 3/4. implement + register in the canonical registry
     if script and not resolve(script).is_file():
-        spec_path.unlink()
         raise ExtensionError(f"declared script does not exist: {script}")
-
-    data = json.loads(registry_path().read_text(encoding="utf-8"))
-    data["tools"].append(
-        {
-            "id": tool_id,
-            "name": name,
-            "spec": spec_rel,
-            "status": "active",
-            "script": script,
-            "notes": notes,
-        }
+    invoke = (
+        f"- CLI: `python3 -m omniagi.{Path(script).stem}`"
+        if script
+        else "- (document the invocation)"
     )
-    registry_path().write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-    report.step(f"3-4. registered '{tool_id}' in {registry_path().name}")
 
-    # regenerate every derived table so nothing drifts
-    changed = docgen.generate()
-    report.step(f"4b. regenerated derived docs: {', '.join(changed) if changed else 'no change'}")
+    # Everything below mutates files on disk. Snapshot each one first and hold an
+    # exclusive lock on the registry so a failure - or a concurrent writer -
+    # cannot leave a partial extension behind.
+    txn = _Transaction()
+    with file_lock(registry_path()):
+        try:
+            txn.track(spec_path)
+            atomic_write_text(
+                spec_path,
+                SPEC_TEMPLATE.format(
+                    tool_id=tool_id,
+                    today=date.today().isoformat(),
+                    purpose=purpose,
+                    invoke=invoke,
+                ),
+            )
+            report.step(f"2. wrote spec {spec_rel} ({spec_path.stat().st_size} bytes)")
 
-    # A logged extension may legitimately rewrite generated constitution files.
-    # Re-record only those hashes, so unrelated drift is still detected.
-    rehashed = refresh_manifest_entries(changed)
-    report.step(f"4c. manifest re-recorded: {', '.join(rehashed) if rehashed else 'no change'}")
+            # 3/4. implement + register in the canonical registry
+            txn.track(registry_path())
+            data = json.loads(registry_path().read_text(encoding="utf-8"))
+            data["tools"].append(
+                {
+                    "id": tool_id,
+                    "name": name,
+                    "spec": spec_rel,
+                    "status": "active",
+                    "script": script,
+                    "notes": notes,
+                }
+            )
+            atomic_write_json(registry_path(), data)
+            report.step(f"3-4. registered '{tool_id}' in {registry_path().name}")
 
-    # 5. verify by reading back from disk
-    try:
-        reloaded = load_registry()
-    except RegistryError as exc:
-        raise ExtensionError(f"registry became invalid after extension: {exc}") from exc
-    entry = reloaded.tool(tool_id)
-    spec_body = spec_path.read_text(encoding="utf-8")
-    verified = entry is not None and tool_id in spec_body and f"`{tool_id}`" in resolve("TOOLS.md").read_text(encoding="utf-8")
-    report.verified = bool(verified)
-    report.step(f"5. verified by read-back: {report.verified}")
-    if not report.verified:
-        raise ExtensionError(f"verification failed for '{tool_id}' - refusing to log success")
+            # regenerate every derived table so nothing drifts
+            for rel in docgen.BLOCKS:
+                txn.track(resolve(rel))
+            changed = docgen.generate()
+            report.step(
+                f"4b. regenerated derived docs: {', '.join(changed) if changed else 'no change'}"
+            )
 
-    # 6. log
+            # A logged extension may legitimately rewrite generated constitution
+            # files. Re-record only those hashes, so unrelated drift is detected.
+            from .hashing import manifest_path
+
+            txn.track(manifest_path())
+            rehashed = refresh_manifest_entries(changed)
+            report.step(
+                f"4c. manifest re-recorded: {', '.join(rehashed) if rehashed else 'no change'}"
+            )
+
+            # 5. verify by reading back from disk
+            try:
+                reloaded = load_registry()
+            except RegistryError as exc:
+                raise ExtensionError(
+                    f"registry became invalid after extension: {exc}"
+                ) from exc
+            entry = reloaded.tool(tool_id)
+            spec_body = spec_path.read_text(encoding="utf-8")
+            verified = (
+                entry is not None
+                and tool_id in spec_body
+                and f"`{tool_id}`" in resolve("TOOLS.md").read_text(encoding="utf-8")
+            )
+            report.verified = bool(verified)
+            report.step(f"5. verified by read-back: {report.verified}")
+            if not report.verified:
+                raise ExtensionError(
+                    f"verification failed for '{tool_id}' - refusing to log success"
+                )
+        except BaseException:
+            txn.rollback()
+            raise
+
+    # 6. log (outside the transaction: only reached once the change is durable)
     logged = append_changelog(f"tool_added: {tool_id} ({purpose}) verified=True")
     report.step(f"6. changelog appended: {logged}")
     return report

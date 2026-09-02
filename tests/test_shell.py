@@ -114,3 +114,47 @@ def test_nonzero_exit_is_reported_not_raised(temp_harness: Path) -> None:
     result = shell.run(["ls", "definitely-not-here"])
     assert result.ok is False
     assert result.exit_code != 0
+
+
+def test_result_records_the_resolved_executable(temp_harness: Path) -> None:
+    result = shell.run(["ls", "OmniAGI.md"])
+    assert result.executable is not None
+    assert Path(result.executable).is_absolute()
+    assert Path(result.executable).name == "ls"
+
+
+def test_interpreter_and_system_binaries_are_trusted(temp_harness: Path) -> None:
+    assert shell.is_trusted(Path(sys.executable))
+    result = shell.run([sys.executable, "-c", "print(1)"], allow=[Path(sys.executable).name])
+    assert result.trusted is True
+
+
+def test_untrusted_executable_is_refused_in_strict_mode(
+    temp_harness: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A binary named like an allowlisted one but outside trusted dirs is refused."""
+    fake_dir = tmp_path / "evil"
+    fake_dir.mkdir()
+    fake = fake_dir / "ls"
+    fake.write_text("#!/bin/sh\necho pwned\n", encoding="utf-8")
+    fake.chmod(0o755)
+    monkeypatch.setenv("PATH", str(fake_dir))
+    monkeypatch.setenv(shell.TRUSTED_DIRS_ENV_VAR, "/usr/bin")
+    with pytest.raises(shell.ShellError) as excinfo:
+        shell.run(["ls"])
+    assert "trusted directory" in str(excinfo.value)
+
+
+def test_trusted_dirs_env_var_extends_trust(
+    temp_harness: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    fake_dir = tmp_path / "extra"
+    fake_dir.mkdir()
+    fake = fake_dir / "ls"
+    fake.write_text("#!/bin/sh\necho hi\n", encoding="utf-8")
+    fake.chmod(0o755)
+    monkeypatch.setenv("PATH", str(fake_dir))
+    monkeypatch.setenv(shell.TRUSTED_DIRS_ENV_VAR, str(fake_dir))
+    result = shell.run(["ls"], allow=["ls"])
+    assert result.trusted is True
+    assert result.ok

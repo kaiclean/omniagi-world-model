@@ -45,8 +45,8 @@ derives everything else from it, and CI enforces the correspondence.
 | Verification | `integrity`, `constitution`, `hashing`, `memory` | Named checks over real filesystem state. |
 | Decision | `routing`, `health` | Which specialist, which seat, is it reachable. |
 | Execution | `shell`, `extend`, `adapters` | Bounded side effects. |
-| Observation | `trace`, `watchdog` | JSONL run traces; periodic health enforcement (see [deploy/](../deploy/README.md)). |
-| Surface | `cli` | `omniagi <check\|route\|hash\|docs\|extend\|memory\|watch\|seats>`. |
+| Observation | `trace`, `watchdog`, `bench` | Tamper-evident hash-chained JSONL run traces; periodic health enforcement (see [deploy/](../deploy/README.md)); offline evaluation suites (see [benchmarks/](../benchmarks/README.md)). |
+| Surface | `cli` | `omniagi <check\|route\|run\|hash\|docs\|extend\|memory\|world\|watch\|seats\|audit\|bench>`. |
 
 ## Data flow: routing a task
 
@@ -60,7 +60,9 @@ derives everything else from it, and CI enforces the correspondence.
    seat. After a failure, `escalate` climbs and accumulates cost.
 5. `health.select_available_seat` probes reachability. If nothing is reachable
    the caller receives `None`/`SeatUnavailable` and must report a blocker.
-6. `trace.Trace` appends the decision to `runs/<date>-<id>.jsonl`.
+6. `trace.Trace` appends the decision to `runs/<date>-<id>.jsonl`. Each event
+   carries the SHA-256 `hash` of the previous one, so `omniagi audit` can later
+   prove the trace was not edited, reordered, or truncated.
 
 ## Invariants CI enforces
 
@@ -75,6 +77,12 @@ derives everything else from it, and CI enforces the correspondence.
 7. Every relative markdown reference resolves, or is an exemption *with a
    documented reason*.
 8. Tools fail loudly — no error sentinels returned as values.
+9. Every active tool declares a well-formed typed contract (inputs, outputs,
+   errors); high-risk capabilities never auto-approve.
+10. Recorded world-state facts are type-checked and carry provenance; a
+    lower-confidence claim never silently overwrites a higher-confidence one.
+11. Run traces are a tamper-evident hash chain — editing, reordering or
+    truncating a trace fails `audit.trace_chain`.
 
 ## Design decisions worth knowing
 

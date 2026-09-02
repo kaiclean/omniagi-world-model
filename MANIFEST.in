@@ -1,0 +1,61 @@
+# Source-distribution manifest.
+#
+# The importable code lives in the ``omniagi`` package, but the harness it
+# operates on is the surrounding tree: the registry is the single source of
+# truth, and the workflows, references, agent specs, tool specs, plans,
+# benchmarks and docs are all read at runtime relative to the harness root
+# (see ``omniagi/paths.py``). An sdist that shipped only the package would be an
+# engine with no world to model, so every data directory is grafted in and only
+# runtime artifacts are excluded.
+
+include LICENSE
+include *.md
+include pyproject.toml
+include requirements.txt
+include requirements-dev.txt
+include .pre-commit-config.yaml
+
+# Registry and its schema: the source of truth and its contract.
+graft registry
+
+# Generated references, workflows, and the human-authored specs behind them.
+graft references
+graft workflows
+graft agents
+graft tools
+graft harnesses
+
+# Runnable assets: sample plans and offline evaluation suites.
+graft plans
+graft benchmarks
+
+# Operations and documentation.
+graft deploy
+graft docs
+graft scripts
+
+# CI configuration ships so the packaged harness stays self-consistent: an ADR
+# references .github/workflows/ci.yml, and the markdown-link check must resolve
+# it from an installed sdist too.
+graft .github
+
+# Durable memory: ship the manifest and templates, never host-local state.
+include memory/CHANGELOG.md
+include memory/manifest.json
+include memory/local.md.example
+
+# The suite ships so an installed harness can still verify itself.
+graft tests
+
+# Package marker for typing.
+include omniagi/py.typed
+
+# Never ship runtime artifacts, host state, or caches.
+prune runs
+exclude memory/local.md
+exclude memory/watchdog.log
+exclude memory/world-state.json
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude *.orig
+global-exclude .DS_Store

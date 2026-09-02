@@ -79,6 +79,47 @@ def test_missing_registry_raises(tmp_path: Path) -> None:
         load_registry(tmp_path / "nope.json")
 
 
+def test_seat_with_unknown_provider_is_rejected(registry: Registry) -> None:
+    data = json.loads(json.dumps(registry.data))
+    data["seats"][0]["provider"] = "no-such-provider"
+    with pytest.raises(RegistryError, match="unknown provider"):
+        validate_registry(data)
+
+
+def test_tool_with_unknown_capability_is_rejected(registry: Registry) -> None:
+    data = json.loads(json.dumps(registry.data))
+    data["tools"][0]["capabilities"] = ["no_such_capability"]
+    with pytest.raises(RegistryError, match="unknown capability"):
+        validate_registry(data)
+
+
+def test_duplicate_provider_ids_are_rejected(registry: Registry) -> None:
+    data = json.loads(json.dumps(registry.data))
+    data["providers"].append(dict(data["providers"][0]))
+    with pytest.raises(RegistryError, match="duplicate provider ids"):
+        validate_registry(data)
+
+
+def test_ungoverned_capability_is_rejected(registry: Registry) -> None:
+    data = json.loads(json.dumps(registry.data))
+    data["policies"]["capability_rules"] = [
+        rule
+        for rule in data["policies"]["capability_rules"]
+        if rule["capability"] != "network"
+    ]
+    with pytest.raises(RegistryError, match="no approval policy rule"):
+        validate_registry(data)
+
+
+def test_non_positive_budget_is_rejected(registry: Registry) -> None:
+    from omniagi.registry import _validate_references
+
+    data = json.loads(json.dumps(registry.data))
+    data["budgets"]["default"]["max_steps"] = 0
+    with pytest.raises(RegistryError, match="budget default.max_steps must be positive"):
+        _validate_references(data)
+
+
 def test_escalation_ladder_is_ordered_by_cost(registry: Registry) -> None:
     """A ladder that does not get more expensive is not an escalation ladder."""
     costs = [registry.seat(sid)["relative_cost"] for sid in registry.escalation["ladder"]]

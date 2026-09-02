@@ -25,14 +25,18 @@ If it ever dirties the tree, that is a bug.
 
 | Command | Purpose |
 |---|---|
-| `omniagi check` | Run every named check: registry, constitution, links, hashes, memory, docs. |
+| `omniagi check` | Run every named check: registry, constitution, links, hashes, memory, docs, contracts, capability approvals, world-state, trace chain. |
 | `omniagi route <task>` | Score the task, pick a specialist and an engine seat. `--explain` shows why. |
+| `omniagi run <plan>` | Execute a plan as a bounded, checkpointed task DAG. `--resume` continues a checkpoint. |
 | `omniagi hash <path>` | SHA-256 a harness file. `--write-manifest` / `--verify-manifest` for the constitution manifest. |
 | `omniagi docs` | Regenerate every table derived from the registry. `--check` fails when stale. |
 | `omniagi extend <tool_id>` | Run the six-step self-extension protocol. `--demo` runs it in a throwaway copy. |
 | `omniagi memory` | Audit durable memory for expiry and hygiene. |
+| `omniagi world` | Inspect or update typed world-state memory (provenance + conflict resolution). |
 | `omniagi watch --once` | One watchdog health check; without `--once` it loops with backoff. See [deploy/](deploy/README.md). |
 | `omniagi seats` | List engine seats with provenance and availability. |
+| `omniagi audit` | Verify the tamper-evident hash chain of run traces under `runs/`. |
+| `omniagi bench` | Run offline evaluation suites. See [benchmarks/](benchmarks/README.md). |
 
 The legacy `scripts/*.py` entry points still work as thin wrappers.
 
@@ -58,6 +62,8 @@ TOOLS.md + tools/          # tool registry + specs
 workflows/                 # agent-loop, tool-extension, model-routing, memory-consolidation
 harnesses/                 # Top-10 agentic MoE engine seats
 agents/                    # specialist subroutines (owned by master)
+plans/                     # sample run plans for `omniagi run`
+benchmarks/                # offline evaluation suites for `omniagi bench`
 docs/                      # architecture, threat model, ADRs, tutorial
 deploy/                    # systemd and launchd units for the watchdog
 scripts/                   # thin wrappers over the omniagi CLI

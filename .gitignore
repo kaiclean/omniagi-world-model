@@ -11,6 +11,7 @@ __pycache__/
 runs/
 memory/local.md
 memory/watchdog.log
+memory/world-state.json
 
 # Build / tooling
 build/

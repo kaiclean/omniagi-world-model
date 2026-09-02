@@ -23,10 +23,12 @@ from dataclasses import dataclass
 from typing import Any
 from urllib.parse import urlparse
 
+from .gateway import credential_vars, provider_for_seat
 from .registry import Registry, load_registry
 from .results import CheckResult
 
-#: Environment variables that, if set, indicate a usable cloud credential.
+#: Environment variables that, if set, indicate a usable cloud credential. This
+#: is the default/fallback set; a provider may declare its own in the registry.
 CLOUD_CREDENTIAL_VARS = (
     "OMNIAGI_API_KEY",
     "OPENAI_API_KEY",
@@ -60,11 +62,18 @@ class SeatHealth:
         }
 
 
-def _local_endpoints() -> tuple[str, ...]:
+def _local_endpoints(provider: dict[str, Any] | None = None) -> tuple[str, ...]:
     raw = os.environ.get(LOCAL_ENDPOINTS_VAR)
-    if not raw:
-        return DEFAULT_LOCAL_ENDPOINTS
-    return tuple(item.strip() for item in raw.split(",") if item.strip())
+    endpoints: list[str] = []
+    if raw:
+        endpoints.extend(item.strip() for item in raw.split(",") if item.strip())
+    else:
+        endpoints.extend(DEFAULT_LOCAL_ENDPOINTS)
+    if provider is not None:
+        configured = os.environ.get(provider["base_url_var"]) or provider.get("base_url_default")
+        if configured and configured not in endpoints:
+            endpoints.insert(0, configured)
+    return tuple(endpoints)
 
 
 def _tcp_reachable(url: str, timeout: float = CONNECT_TIMEOUT_SECONDS) -> bool:
@@ -80,17 +89,31 @@ def _tcp_reachable(url: str, timeout: float = CONNECT_TIMEOUT_SECONDS) -> bool:
         return False
 
 
-def _cloud_credential() -> str | None:
-    for var in CLOUD_CREDENTIAL_VARS:
+def _credential(vars_: tuple[str, ...]) -> str | None:
+    for var in vars_:
         if os.environ.get(var):
             return var
     return None
 
 
-def probe_seat(seat: dict[str, Any], probe_network: bool = False) -> SeatHealth:
-    """Probe one seat. Never assumes availability."""
-    if seat["tier"] == "local":
-        endpoints = _local_endpoints()
+def _cloud_credential() -> str | None:
+    return _credential(CLOUD_CREDENTIAL_VARS)
+
+
+def probe_seat(
+    seat: dict[str, Any],
+    probe_network: bool = False,
+    registry: Registry | None = None,
+) -> SeatHealth:
+    """Probe one seat using its provider's health rule. Never assumes availability."""
+    provider = None
+    if seat.get("provider"):
+        reg = registry or load_registry()
+        provider = provider_for_seat(seat, reg)
+    health_kind = provider["health"] if provider else ("endpoint" if seat["tier"] == "local" else "credential")
+
+    if health_kind == "endpoint":
+        endpoints = _local_endpoints(provider)
         if not probe_network:
             return SeatHealth(
                 seat["id"],
@@ -112,16 +135,15 @@ def probe_seat(seat: dict[str, Any], probe_network: bool = False) -> SeatHealth:
             f"no local endpoint reachable ({', '.join(endpoints)})",
         )
 
-    credential = _cloud_credential()
+    cred_vars = credential_vars(provider) or CLOUD_CREDENTIAL_VARS
+    credential = _credential(cred_vars)
     if credential is None:
         return SeatHealth(
             seat["id"],
             seat["engine"],
             seat["tier"],
             False,
-            "no cloud credential in environment ("
-            + ", ".join(CLOUD_CREDENTIAL_VARS)
-            + ")",
+            "no cloud credential in environment (" + ", ".join(cred_vars) + ")",
         )
     return SeatHealth(
         seat["id"], seat["engine"], seat["tier"], True, f"credential present via {credential}"
@@ -130,7 +152,7 @@ def probe_seat(seat: dict[str, Any], probe_network: bool = False) -> SeatHealth:
 
 def probe_all(registry: Registry | None = None, probe_network: bool = False) -> list[SeatHealth]:
     reg = registry or load_registry()
-    return [probe_seat(seat, probe_network=probe_network) for seat in reg.seats]
+    return [probe_seat(seat, probe_network=probe_network, registry=reg) for seat in reg.seats]
 
 
 def select_available_seat(
