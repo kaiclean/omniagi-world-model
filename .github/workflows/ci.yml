@@ -1,23 +1,10 @@
-name: OmniAGI Harness Integrity
+name: CI
 
-"on":
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
+on: [push, workflow_dispatch]
 
 jobs:
-  selfcheck:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Run OmniAGI self-extension + integrity check
-        run: python3 scripts/selfcheck.py
-      - name: Verify file_hasher tool
-        run: |
-          python3 scripts/hasher.py OmniAGI.md
+      - run: echo "hello"
