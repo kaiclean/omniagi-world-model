@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from .paths import harness_root, resolve
+from .persistence import atomic_write_json, file_lock
 from .registry import Registry, load_registry
 from .results import CheckResult
 
@@ -86,11 +87,11 @@ def build_manifest(registry: Registry | None = None) -> dict[str, Any]:
 
 
 def write_manifest(registry: Registry | None = None) -> Path:
-    """Write ``memory/manifest.json`` and return its path."""
+    """Write ``memory/manifest.json`` atomically and return its path."""
     manifest = build_manifest(registry)
     target = manifest_path()
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    with file_lock(target):
+        atomic_write_json(target, manifest, sort_keys=True)
     return target
 
 
@@ -166,16 +167,19 @@ def refresh_manifest_entries(rel_paths: list[str]) -> list[str]:
         return []
     reg = load_registry()
     updated: list[str] = []
-    for rel in rel_paths:
-        if rel not in reg.constitution_files:
-            continue
-        digest = hash_file(rel)
-        if recorded["files"].get(rel) != digest:
-            recorded["files"][rel] = digest
-            updated.append(rel)
-    if updated:
-        recorded["generated_on"] = date.today().isoformat()
-        manifest_path().write_text(
-            json.dumps(recorded, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-        )
+    target = manifest_path()
+    with file_lock(target):
+        recorded = read_manifest()
+        if recorded is None:
+            return []
+        for rel in rel_paths:
+            if rel not in reg.constitution_files:
+                continue
+            digest = hash_file(rel)
+            if recorded["files"].get(rel) != digest:
+                recorded["files"][rel] = digest
+                updated.append(rel)
+        if updated:
+            recorded["generated_on"] = date.today().isoformat()
+            atomic_write_json(target, recorded, sort_keys=True)
     return updated

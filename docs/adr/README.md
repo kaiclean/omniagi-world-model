@@ -13,6 +13,10 @@ decision.
 | [0001](0001-single-master-authority.md) | Single-master authority | Accepted |
 | [0002](0002-registry-as-single-source-of-truth.md) | Registry as single source of truth | Accepted |
 | [0003](0003-tools-fail-loudly.md) | Tools fail loudly | Accepted |
+| [0004](0004-typed-tool-contracts-and-capability-approvals.md) | Typed tool contracts and capability approvals | Accepted |
+| [0005](0005-tamper-evident-run-traces.md) | Tamper-evident run traces | Accepted |
+| [0006](0006-bounded-checkpointed-autonomous-runs.md) | Bounded, checkpointed autonomous runs | Accepted |
+| [0007](0007-typed-world-state-memory-with-provenance.md) | Typed world-state memory with provenance | Accepted |
 
 ## Template
 

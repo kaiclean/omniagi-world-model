@@ -147,6 +147,130 @@ def _cmd_memory(args: argparse.Namespace) -> int:
     return 1 if failed else 0
 
 
+def _cmd_world(args: argparse.Namespace) -> int:
+    from .worldstate import WorldStateError, assert_fact, check_world_state, facts, get_fact
+
+    if args.assert_key is not None:
+        try:
+            value = _coerce_world_value(args.value, args.type)
+            resolution = assert_fact(
+                key=args.assert_key,
+                value=value,
+                value_type=args.type,
+                source=args.source,
+                confidence=args.confidence,
+            )
+        except WorldStateError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        print(json.dumps(resolution.__dict__, indent=2))
+        return 0
+    if args.get is not None:
+        fact = get_fact(args.get)
+        if fact is None:
+            print(f"error: no world-state fact named '{args.get}'", file=sys.stderr)
+            return 1
+        print(json.dumps(fact.to_dict(), indent=2))
+        return 0
+    if args.list:
+        print(json.dumps([fact.to_dict() for fact in facts()], indent=2))
+        return 0
+
+    result = check_world_state()
+    print(f"[{result.status.value}] {result.name}: {result.summary}")
+    for detail in result.details:
+        print(f"  - {detail}")
+    return 0 if result.ok else 1
+
+
+def _coerce_world_value(raw: str | None, value_type: str) -> Any:
+    from .worldstate import WorldStateError
+
+    if value_type == "null":
+        return None
+    if raw is None:
+        raise WorldStateError(f"--value is required for type '{value_type}'")
+    if value_type == "string":
+        return raw
+    if value_type == "boolean":
+        lowered = raw.strip().lower()
+        if lowered in {"true", "1", "yes"}:
+            return True
+        if lowered in {"false", "0", "no"}:
+            return False
+        raise WorldStateError(f"invalid boolean {raw!r}")
+    if value_type == "integer":
+        try:
+            return int(raw)
+        except ValueError as exc:
+            raise WorldStateError(f"invalid integer {raw!r}") from exc
+    if value_type == "number":
+        try:
+            return float(raw)
+        except ValueError as exc:
+            raise WorldStateError(f"invalid number {raw!r}") from exc
+    # object / array
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise WorldStateError(f"invalid JSON for {value_type}: {exc}") from exc
+
+
+def _cmd_run(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from .orchestrator import Orchestrator, OrchestratorError, load_plan
+
+    try:
+        trace = getattr(args, "trace", None)
+        if args.resume:
+            orch = Orchestrator.resume(args.run_id, trace=trace)
+        else:
+            if not args.plan:
+                print("error: provide a plan path (or --resume --run-id ID)", file=sys.stderr)
+                return 2
+            plan = load_plan(Path(args.plan))
+            budget = _budget_overrides(args)
+            orch = Orchestrator.from_plan(
+                plan, run_id=args.run_id, budget=budget, trace=trace
+            )
+        state = orch.run()
+    except OrchestratorError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    if args.json:
+        print(json.dumps(state.to_dict(), indent=2))
+    else:
+        print(f"run {state.run_id}: {state.status}")
+        for task in state.tasks:
+            print(f"  [{task.state:>7}] {task.id} ({task.kind}) - {len(task.attempts)} attempt(s)")
+        for blocker in state.blockers:
+            print(f"  blocker: {blocker}")
+        print(
+            f"spent: steps={state.spent_steps} "
+            f"cost={state.spent_cost:g} seconds={state.spent_seconds:g}"
+        )
+        print(f"checkpoint: {orch.checkpoint_path}")
+    return 0 if state.status == "completed" else 1
+
+
+def _budget_overrides(args: argparse.Namespace) -> Any:
+    from .orchestrator import Budget
+    from .registry import load_registry
+
+    budget = Budget.from_registry(load_registry())
+    if args.max_steps is not None:
+        budget.max_steps = args.max_steps
+    if args.max_seconds is not None:
+        budget.max_seconds = args.max_seconds
+    if args.max_retries is not None:
+        budget.max_retries = args.max_retries
+    if args.max_cost is not None:
+        budget.max_cost = args.max_cost
+    return budget
+
+
 def _cmd_watch(args: argparse.Namespace) -> int:
     from .watchdog import main as watchdog_main
 
@@ -167,6 +291,44 @@ def _cmd_seats(args: argparse.Namespace) -> int:
     results = [h.to_dict() for h in probe_all(probe_network=args.probe_network)]
     print(json.dumps(results, indent=2))
     return 0
+
+
+def _cmd_audit(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from . import trace
+
+    audits = [trace.audit_trace(Path(args.path))] if args.path else trace.audit_all()
+    if args.json:
+        print(json.dumps([a.to_dict() for a in audits], indent=2))
+    elif not audits:
+        print("no run traces recorded yet - nothing to audit")
+    else:
+        for audit in audits:
+            status = "OK  " if audit.ok else "FAIL"
+            print(f"[{status}] {audit.path} ({audit.events} events)")
+            for error in audit.errors:
+                print(f"         - {error}")
+    return 0 if all(a.ok for a in audits) else 1
+
+
+def _cmd_bench(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from . import bench
+
+    try:
+        suites = (
+            [bench.run_file(Path(args.suite))] if args.suite else bench.run_all()
+        )
+    except bench.BenchError as exc:
+        print(f"benchmark error: {exc}")
+        return 2
+    if args.json:
+        print(json.dumps([s.to_dict() for s in suites], indent=2))
+    else:
+        print(bench.format_report(suites, verbose=args.verbose))
+    return 0 if all(s.ok for s in suites) else 1
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -244,6 +406,45 @@ def build_parser() -> argparse.ArgumentParser:
     seats.add_argument("--probe-network", action="store_true")
     seats.set_defaults(func=_cmd_seats)
 
+    audit = sub.add_parser("audit", help="verify the tamper-evident hash chain of run traces")
+    audit.add_argument("path", nargs="?", help="a single trace file (default: audit all under runs/)")
+    audit.add_argument("--json", action="store_true", help="emit the audit report as JSON")
+    audit.set_defaults(func=_cmd_audit)
+
+    bench = sub.add_parser("bench", help="run offline benchmark/evaluation suites")
+    bench.add_argument("suite", nargs="?", help="a single suite file (default: run all under benchmarks/)")
+    bench.add_argument("--json", action="store_true", help="emit the evaluation report as JSON")
+    bench.add_argument("--verbose", action="store_true", help="show every case, not just failures")
+    bench.set_defaults(func=_cmd_bench)
+
+    run = sub.add_parser("run", help="execute a plan as a bounded, checkpointed task DAG")
+    run.add_argument("plan", nargs="?", help="path to a plan JSON file")
+    run.add_argument("--run-id", default="run", help="run identifier (also the checkpoint dir)")
+    run.add_argument("--resume", action="store_true", help="resume a checkpointed run by id")
+    run.add_argument("--max-steps", type=int, help="override the step budget")
+    run.add_argument("--max-seconds", type=float, help="override the wall-clock budget")
+    run.add_argument("--max-retries", type=int, help="override the per-task retry budget")
+    run.add_argument("--max-cost", type=float, help="override the cumulative cost budget")
+    run.add_argument("--json", action="store_true", help="emit the final run state as JSON")
+    run.set_defaults(func=_cmd_run)
+
+    world = sub.add_parser("world", help="inspect or update typed world-state memory")
+    world.add_argument("--list", action="store_true", help="print all facts as JSON")
+    world.add_argument("--get", metavar="KEY", help="print a single fact as JSON")
+    world.add_argument("--assert", dest="assert_key", metavar="KEY", help="record an observation")
+    world.add_argument("--value", help="value for --assert (JSON for object/array types)")
+    world.add_argument(
+        "--type",
+        default="string",
+        choices=sorted(["string", "integer", "number", "boolean", "object", "array", "null"]),
+        help="declared type of the asserted value",
+    )
+    world.add_argument("--source", default="cli", help="provenance source for --assert")
+    world.add_argument(
+        "--confidence", type=float, default=1.0, help="confidence in [0, 1] for --assert"
+    )
+    world.set_defaults(func=_cmd_world)
+
     return parser
 
 
@@ -254,6 +455,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     func: Any = args.func
     with Trace(command=args.command) as trace:
+        args.trace = trace
         code = func(args)
         trace.event("result", exit_code=code)
     return int(code)

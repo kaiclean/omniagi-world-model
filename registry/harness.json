@@ -97,7 +97,32 @@
       "spec": "tools/file_read.md",
       "status": "active",
       "script": null,
-      "notes": "Use read_file or cat equivalent"
+      "notes": "Use read_file or cat equivalent",
+      "capabilities": [
+        "fs_read"
+      ],
+      "contract": {
+        "summary": "Read a UTF-8 file inside the harness root.",
+        "inputs": [
+          {
+            "name": "path",
+            "type": "string",
+            "required": true,
+            "description": "Harness-relative path to read."
+          }
+        ],
+        "outputs": [
+          {
+            "name": "content",
+            "type": "string",
+            "description": "The file's decoded contents."
+          }
+        ],
+        "errors": [
+          "path escapes the harness root",
+          "file does not exist"
+        ]
+      }
     },
     {
       "id": "file_write",
@@ -105,7 +130,37 @@
       "spec": "tools/file_write.md",
       "status": "active",
       "script": null,
-      "notes": "Verify by read-back"
+      "notes": "Verify by read-back",
+      "capabilities": [
+        "fs_write"
+      ],
+      "contract": {
+        "summary": "Atomically write a UTF-8 file inside the harness root.",
+        "inputs": [
+          {
+            "name": "path",
+            "type": "string",
+            "required": true,
+            "description": "Harness-relative path to write."
+          },
+          {
+            "name": "content",
+            "type": "string",
+            "required": true,
+            "description": "The full new contents of the file."
+          }
+        ],
+        "outputs": [
+          {
+            "name": "bytes_written",
+            "type": "integer",
+            "description": "Number of bytes written."
+          }
+        ],
+        "errors": [
+          "path escapes the harness root"
+        ]
+      }
     },
     {
       "id": "file_patch",
@@ -113,7 +168,46 @@
       "spec": "tools/file_patch.md",
       "status": "active",
       "script": null,
-      "notes": "Prefer over overwrite when surgical"
+      "notes": "Prefer over overwrite when surgical",
+      "capabilities": [
+        "fs_read",
+        "fs_write"
+      ],
+      "contract": {
+        "summary": "Replace an exact, unique text span in a file.",
+        "inputs": [
+          {
+            "name": "path",
+            "type": "string",
+            "required": true,
+            "description": "Harness-relative path to edit."
+          },
+          {
+            "name": "old",
+            "type": "string",
+            "required": true,
+            "description": "Exact text to replace; must be unique in the file."
+          },
+          {
+            "name": "new",
+            "type": "string",
+            "required": true,
+            "description": "Replacement text."
+          }
+        ],
+        "outputs": [
+          {
+            "name": "replaced",
+            "type": "boolean",
+            "description": "Whether the replacement was applied."
+          }
+        ],
+        "errors": [
+          "old text not found",
+          "old text is not unique",
+          "path escapes the harness root"
+        ]
+      }
     },
     {
       "id": "shell",
@@ -121,7 +215,55 @@
       "spec": "tools/shell.md",
       "status": "active",
       "script": "omniagi/shell.py",
-      "notes": "Allowlisted, timeout-bounded, no shell interpolation. See docs/threat-model.md"
+      "notes": "Allowlisted, timeout-bounded, no shell interpolation. See docs/threat-model.md",
+      "capabilities": [
+        "process_exec"
+      ],
+      "contract": {
+        "summary": "Run an allowlisted, trusted executable as an argument vector.",
+        "inputs": [
+          {
+            "name": "argv",
+            "type": "array",
+            "required": true,
+            "description": "Command as an argument vector; a bare string is refused."
+          },
+          {
+            "name": "timeout",
+            "type": "number",
+            "required": false,
+            "description": "Seconds before the command is killed."
+          }
+        ],
+        "outputs": [
+          {
+            "name": "exit_code",
+            "type": "integer",
+            "description": "Process exit status (124 on timeout)."
+          },
+          {
+            "name": "stdout",
+            "type": "string",
+            "description": "Captured standard output."
+          },
+          {
+            "name": "stderr",
+            "type": "string",
+            "description": "Captured standard error."
+          },
+          {
+            "name": "timed_out",
+            "type": "boolean",
+            "description": "Whether the command was killed on timeout."
+          }
+        ],
+        "errors": [
+          "command is not allowlisted",
+          "command not found on PATH",
+          "executable is not inside a trusted directory",
+          "workdir escapes the harness root"
+        ]
+      }
     },
     {
       "id": "web_search",
@@ -129,7 +271,31 @@
       "spec": "tools/web_search.md",
       "status": "active",
       "script": null,
-      "notes": "External facts / current state"
+      "notes": "External facts / current state",
+      "capabilities": [
+        "network"
+      ],
+      "contract": {
+        "summary": "Look up a query on the web (requires the network capability).",
+        "inputs": [
+          {
+            "name": "query",
+            "type": "string",
+            "required": true,
+            "description": "The search query."
+          }
+        ],
+        "outputs": [
+          {
+            "name": "results",
+            "type": "array",
+            "description": "Ranked result records."
+          }
+        ],
+        "errors": [
+          "network access is unavailable"
+        ]
+      }
     },
     {
       "id": "model_route",
@@ -137,7 +303,37 @@
       "spec": "tools/model_route.md",
       "status": "active",
       "script": "omniagi/routing.py",
-      "notes": "Weighted scoring + escalation ladder; omniagi route"
+      "notes": "Weighted scoring + escalation ladder; omniagi route",
+      "capabilities": [],
+      "contract": {
+        "summary": "Choose a specialist and engine seat for a task.",
+        "inputs": [
+          {
+            "name": "task",
+            "type": "string",
+            "required": true,
+            "description": "Natural-language description of the task."
+          }
+        ],
+        "outputs": [
+          {
+            "name": "specialist",
+            "type": "string",
+            "description": "Selected specialist id."
+          },
+          {
+            "name": "seat",
+            "type": "string",
+            "description": "Selected engine-seat id."
+          },
+          {
+            "name": "confidence",
+            "type": "number",
+            "description": "Routing confidence in [0, 1]."
+          }
+        ],
+        "errors": []
+      }
     },
     {
       "id": "memory_update",
@@ -145,7 +341,29 @@
       "spec": "tools/memory_update.md",
       "status": "active",
       "script": "omniagi/memory.py",
-      "notes": "Deduplicating changelog append; omniagi memory"
+      "notes": "Deduplicating changelog append; omniagi memory",
+      "capabilities": [
+        "memory_write"
+      ],
+      "contract": {
+        "summary": "Append a deduplicated, dated entry to the changelog.",
+        "inputs": [
+          {
+            "name": "message",
+            "type": "string",
+            "required": true,
+            "description": "The changelog message to append."
+          }
+        ],
+        "outputs": [
+          {
+            "name": "appended",
+            "type": "boolean",
+            "description": "Whether a new line was written."
+          }
+        ],
+        "errors": []
+      }
     },
     {
       "id": "tool_register",
@@ -153,7 +371,52 @@
       "spec": "tools/tool_register.md",
       "status": "active",
       "script": "omniagi/extend.py",
-      "notes": "See workflows/tool-extension.md; omniagi extend"
+      "notes": "See workflows/tool-extension.md; omniagi extend",
+      "capabilities": [
+        "registry_write",
+        "fs_write"
+      ],
+      "contract": {
+        "summary": "Run the transactional self-extension protocol for a new tool.",
+        "inputs": [
+          {
+            "name": "tool_id",
+            "type": "string",
+            "required": true,
+            "description": "Lowercase snake_case id for the new tool."
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "description": "Human-readable tool name."
+          },
+          {
+            "name": "purpose",
+            "type": "string",
+            "required": true,
+            "description": "What the tool does."
+          },
+          {
+            "name": "script",
+            "type": "string",
+            "required": false,
+            "description": "Optional harness-relative implementation path."
+          }
+        ],
+        "outputs": [
+          {
+            "name": "verified",
+            "type": "boolean",
+            "description": "Whether the extension was verified by read-back."
+          }
+        ],
+        "errors": [
+          "tool is already registered",
+          "declared script does not exist",
+          "verification failed"
+        ]
+      }
     },
     {
       "id": "missing_tool_detector",
@@ -161,7 +424,34 @@
       "spec": "tools/missing_tool_detector.md",
       "status": "active",
       "script": null,
-      "notes": "Triggers tool-extension workflow"
+      "notes": "Triggers tool-extension workflow",
+      "capabilities": [
+        "fs_read"
+      ],
+      "contract": {
+        "summary": "Detect whether a needed capability lacks a registered tool.",
+        "inputs": [
+          {
+            "name": "capability",
+            "type": "string",
+            "required": true,
+            "description": "The capability being sought."
+          }
+        ],
+        "outputs": [
+          {
+            "name": "gap",
+            "type": "boolean",
+            "description": "Whether a capability gap exists."
+          },
+          {
+            "name": "suggestion",
+            "type": "string",
+            "description": "Suggested tool id to create, if any."
+          }
+        ],
+        "errors": []
+      }
     },
     {
       "id": "file_hasher",
@@ -169,7 +459,32 @@
       "spec": "tools/file_hasher.md",
       "status": "active",
       "script": "omniagi/hashing.py",
-      "notes": "SHA-256; backs the memory/manifest.json drift check"
+      "notes": "SHA-256; backs the memory/manifest.json drift check",
+      "capabilities": [
+        "fs_read"
+      ],
+      "contract": {
+        "summary": "Compute the SHA-256 of a harness file.",
+        "inputs": [
+          {
+            "name": "path",
+            "type": "string",
+            "required": true,
+            "description": "Harness-relative path to hash."
+          }
+        ],
+        "outputs": [
+          {
+            "name": "sha256",
+            "type": "string",
+            "description": "Lower-case hex digest."
+          }
+        ],
+        "errors": [
+          "file does not exist",
+          "path escapes the harness root"
+        ]
+      }
     },
     {
       "id": "summarize_url",
@@ -177,7 +492,32 @@
       "spec": "tools/summarize_url.md",
       "status": "active",
       "script": null,
-      "notes": "Added via the self-extension protocol"
+      "notes": "Added via the self-extension protocol",
+      "capabilities": [
+        "network"
+      ],
+      "contract": {
+        "summary": "Fetch and summarize a URL (requires the network capability).",
+        "inputs": [
+          {
+            "name": "url",
+            "type": "string",
+            "required": true,
+            "description": "An http or https URL."
+          }
+        ],
+        "outputs": [
+          {
+            "name": "summary",
+            "type": "string",
+            "description": "A short textual summary."
+          }
+        ],
+        "errors": [
+          "network access is unavailable",
+          "url is not http or https"
+        ]
+      }
     },
     {
       "id": "seat_health",
@@ -185,7 +525,34 @@
       "spec": "tools/seat_health.md",
       "status": "active",
       "script": "omniagi/health.py",
-      "notes": "Decides cloud vs local fallback; never simulates a seat"
+      "notes": "Decides cloud vs local fallback; never simulates a seat",
+      "capabilities": [
+        "network"
+      ],
+      "contract": {
+        "summary": "Probe engine-seat availability without fabricating a verdict.",
+        "inputs": [
+          {
+            "name": "seat_id",
+            "type": "string",
+            "required": false,
+            "description": "Seat to probe; omit to probe all."
+          }
+        ],
+        "outputs": [
+          {
+            "name": "available",
+            "type": "boolean",
+            "description": "Whether a usable seat was found."
+          },
+          {
+            "name": "reason",
+            "type": "string",
+            "description": "Evidence for the verdict."
+          }
+        ],
+        "errors": []
+      }
     }
   ],
   "seats": [
@@ -204,7 +571,8 @@
         "benchmark": "catalog capability flags (tools=true, reasoning=true)",
         "measured_on": "2026-09-02",
         "verified_on": "2026-09-02"
-      }
+      },
+      "provider": "gateway"
     },
     {
       "id": "qwen3-coder-480b-a35b",
@@ -221,7 +589,8 @@
         "benchmark": "catalog capability flags (tools=true), agentic coding posture",
         "measured_on": "2026-09-02",
         "verified_on": "2026-09-02"
-      }
+      },
+      "provider": "gateway"
     },
     {
       "id": "qwen3-235b-a22b-thinking",
@@ -238,7 +607,8 @@
         "benchmark": "catalog capability flags (tools=true, reasoning=true)",
         "measured_on": "2026-09-02",
         "verified_on": "2026-09-02"
-      }
+      },
+      "provider": "gateway"
     },
     {
       "id": "nemotron-3-ultra",
@@ -255,7 +625,8 @@
         "benchmark": "vendor positioning only - no independent measurement",
         "measured_on": "2026-09-02",
         "verified_on": "2026-09-02"
-      }
+      },
+      "provider": "gateway"
     },
     {
       "id": "qwen3.5-122b-a10b",
@@ -272,7 +643,8 @@
         "benchmark": "catalog capability flags (tools=true, reasoning=true)",
         "measured_on": "2026-09-02",
         "verified_on": "2026-09-02"
-      }
+      },
+      "provider": "gateway"
     },
     {
       "id": "qwen3.6-35b-a3b",
@@ -289,7 +661,8 @@
         "benchmark": "no independent agentic benchmark recorded",
         "measured_on": "2026-09-02",
         "verified_on": "2026-09-02"
-      }
+      },
+      "provider": "gateway"
     },
     {
       "id": "qwen3-next-80b-a3b",
@@ -306,7 +679,8 @@
         "benchmark": "catalog capability flags (tools=true)",
         "measured_on": "2026-09-02",
         "verified_on": "2026-09-02"
-      }
+      },
+      "provider": "gateway"
     },
     {
       "id": "glm-4.7-flash",
@@ -323,7 +697,8 @@
         "benchmark": "tau2-Bench ~79.5 (reported, not re-run here)",
         "measured_on": "2026-09-02",
         "verified_on": "2026-09-02"
-      }
+      },
+      "provider": "gateway"
     },
     {
       "id": "deepseek-r1",
@@ -340,7 +715,8 @@
         "benchmark": "catalog capability flags (reasoning=true)",
         "measured_on": "2026-09-02",
         "verified_on": "2026-09-02"
-      }
+      },
+      "provider": "gateway"
     },
     {
       "id": "qwen3.5-9b-hauhaucs",
@@ -357,7 +733,8 @@
         "benchmark": "BFCL-V4 66.1, TAU2 79.1 (reported, not re-run here)",
         "measured_on": "2026-09-02",
         "verified_on": "2026-09-02"
-      }
+      },
+      "provider": "local"
     }
   ],
   "routing": {
@@ -490,6 +867,10 @@
       "reason": "gitignored runtime artifact written by the watchdog"
     },
     {
+      "path": "memory/world-state.json",
+      "reason": "gitignored runtime world-state store written by omniagi world / the run loop"
+    },
+    {
       "path": "models_dev_cache.json",
       "reason": "external Hermes catalog artifact outside this repository"
     },
@@ -509,5 +890,114 @@
       "path": "tests/test_line_counter.py",
       "reason": "hypothetical example file created by the reader while following docs/tutorial-add-a-tool.md"
     }
-  ]
+  ],
+  "providers": [
+    {
+      "id": "gateway",
+      "name": "OpenAI-compatible cloud gateway",
+      "tier": "cloud",
+      "base_url_var": "OMNIAGI_BASE_URL",
+      "base_url_default": null,
+      "api_key_vars": [
+        "OMNIAGI_API_KEY",
+        "OPENAI_API_KEY",
+        "OPENROUTER_API_KEY",
+        "DEEPINFRA_API_KEY",
+        "TOGETHER_API_KEY"
+      ],
+      "chat_path": "/chat/completions",
+      "health": "credential"
+    },
+    {
+      "id": "local",
+      "name": "Local OpenAI-compatible endpoint",
+      "tier": "local",
+      "base_url_var": "OMNIAGI_LOCAL_BASE_URL",
+      "base_url_default": "http://127.0.0.1:11434/v1",
+      "api_key_vars": [],
+      "chat_path": "/chat/completions",
+      "health": "endpoint"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "fs_read",
+      "name": "Filesystem read",
+      "risk": "low",
+      "description": "Read files inside the harness root."
+    },
+    {
+      "id": "fs_write",
+      "name": "Filesystem write",
+      "risk": "high",
+      "description": "Create or modify files inside the harness root."
+    },
+    {
+      "id": "process_exec",
+      "name": "Process execution",
+      "risk": "high",
+      "description": "Execute allowlisted subprocesses via the hardened shell."
+    },
+    {
+      "id": "network",
+      "name": "Network access",
+      "risk": "high",
+      "description": "Make outbound network requests to model or web endpoints."
+    },
+    {
+      "id": "registry_write",
+      "name": "Registry write",
+      "risk": "high",
+      "description": "Modify the canonical registry that governs the harness."
+    },
+    {
+      "id": "memory_write",
+      "name": "Memory write",
+      "risk": "medium",
+      "description": "Append to or rewrite the audited memory and changelog files."
+    }
+  ],
+  "policies": {
+    "default_approval": "master",
+    "capability_rules": [
+      {
+        "capability": "fs_read",
+        "approval": "auto",
+        "rationale": "Reading harness files is non-destructive and always permitted."
+      },
+      {
+        "capability": "fs_write",
+        "approval": "master",
+        "rationale": "Writing files can alter the constitution, so the master must approve."
+      },
+      {
+        "capability": "process_exec",
+        "approval": "master",
+        "rationale": "Running subprocesses is the most dangerous capability and needs master approval."
+      },
+      {
+        "capability": "network",
+        "approval": "master",
+        "rationale": "Outbound requests leave the sandbox, so the master must approve them."
+      },
+      {
+        "capability": "registry_write",
+        "approval": "master",
+        "rationale": "The registry is the single source of truth; only the master may change it."
+      },
+      {
+        "capability": "memory_write",
+        "approval": "auto",
+        "rationale": "Appending audited, self-verifying memory entries is routine."
+      }
+    ]
+  },
+  "budgets": {
+    "default": {
+      "max_steps": 64,
+      "max_seconds": 900,
+      "max_retries": 3,
+      "max_cost": 1000.0
+    }
+  }
 }

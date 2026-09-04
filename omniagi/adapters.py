@@ -12,17 +12,18 @@ forbids. Tests that exercise it are skipped in CI for the same reason.
 from __future__ import annotations
 
 import json
-import os
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from typing import Any
 
+from .gateway import LEGACY_API_KEY_VARS, LEGACY_BASE_URL_VAR, resolve_endpoint
 from .health import select_available_seat
 from .registry import Registry, load_registry
 
-BASE_URL_VAR = "OMNIAGI_BASE_URL"
-API_KEY_VARS = ("OMNIAGI_API_KEY", "OPENAI_API_KEY", "OPENROUTER_API_KEY")
+#: Kept for backward compatibility and tests; provider config now drives calls.
+BASE_URL_VAR = LEGACY_BASE_URL_VAR
+API_KEY_VARS = LEGACY_API_KEY_VARS
 DEFAULT_TIMEOUT = 60.0
 
 SYSTEM_PROMPT = (
@@ -43,14 +44,6 @@ class SeatResponse:
     raw: dict[str, Any]
 
 
-def _api_key() -> str | None:
-    for var in API_KEY_VARS:
-        value = os.environ.get(var)
-        if value:
-            return value
-    return None
-
-
 def call_seat(
     prompt: str,
     seat_id: str,
@@ -63,12 +56,13 @@ def call_seat(
     if seat is None:
         raise SeatUnavailable(f"unknown seat '{seat_id}'")
 
-    base_url = os.environ.get(BASE_URL_VAR)
-    key = _api_key()
-    if not base_url or not key:
+    endpoint = resolve_endpoint(seat, reg)
+    if not endpoint.has_base_url or (
+        endpoint.health_kind == "credential" and not endpoint.has_credential
+    ):
         raise SeatUnavailable(
-            f"seat '{seat_id}' is not callable: set {BASE_URL_VAR} and one of "
-            + ", ".join(API_KEY_VARS)
+            f"seat '{seat_id}' is not callable: set {endpoint.base_url_var} and one of "
+            + ", ".join(endpoint.api_key_vars)
         )
 
     payload = json.dumps(
@@ -81,10 +75,15 @@ def call_seat(
         }
     ).encode("utf-8")
 
+    headers = {"Content-Type": "application/json"}
+    if endpoint.api_key:
+        headers["Authorization"] = "Bearer " + endpoint.api_key
+
+    assert endpoint.chat_url is not None  # guaranteed by has_base_url above
     request = urllib.request.Request(  # noqa: S310 - scheme validated below
-        url=base_url.rstrip("/") + "/chat/completions",
+        url=endpoint.chat_url,
         data=payload,
-        headers={"Authorization": "Bearer " + key, "Content-Type": "application/json"},
+        headers=headers,
         method="POST",
     )
     if request.type not in ("http", "https"):
@@ -100,6 +99,8 @@ def call_seat(
         content = body["choices"][0]["message"]["content"]
     except (KeyError, IndexError, TypeError) as exc:
         raise SeatUnavailable(f"seat '{seat_id}' returned an unexpected schema") from exc
+    if not isinstance(content, str) or not content:
+        raise SeatUnavailable(f"seat '{seat_id}' returned an unexpected schema (empty content)")
 
     return SeatResponse(seat=seat["id"], engine=seat["engine"], content=content, raw=body)
 

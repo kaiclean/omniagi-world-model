@@ -61,6 +61,22 @@ class Registry:
         return self.data["non_negotiables"]
 
     @property
+    def providers(self) -> list[dict[str, Any]]:
+        return self.data.get("providers", [])
+
+    @property
+    def capabilities(self) -> list[dict[str, Any]]:
+        return self.data.get("capabilities", [])
+
+    @property
+    def policies(self) -> dict[str, Any]:
+        return self.data.get("policies", {})
+
+    @property
+    def budgets(self) -> dict[str, Any]:
+        return self.data.get("budgets", {})
+
+    @property
     def constitution_files(self) -> list[str]:
         return self.data["constitution_files"]
 
@@ -85,6 +101,21 @@ class Registry:
             if tool["id"] == tool_id:
                 return tool
         return None
+
+    def provider(self, provider_id: str) -> dict[str, Any] | None:
+        for provider in self.providers:
+            if provider["id"] == provider_id:
+                return provider
+        return None
+
+    def capability(self, capability_id: str) -> dict[str, Any] | None:
+        for capability in self.capabilities:
+            if capability["id"] == capability_id:
+                return capability
+        return None
+
+    def default_budget(self) -> dict[str, Any]:
+        return dict(self.budgets.get("default", {}))
 
 
 def registry_path() -> Path:
@@ -193,5 +224,68 @@ def _validate_references(data: dict[str, Any]) -> None:
     if len(set(ranks)) != len(ranks):
         errors.append("seat ranks must be unique")
 
+    _validate_optional_references(data, seat_ids, errors)
+
     if errors:
         raise RegistryError("; ".join(errors))
+
+
+def _validate_optional_references(
+    data: dict[str, Any], seat_ids: set[str], errors: list[str]
+) -> None:
+    """Referential rules for the optional providers/capabilities/policies/budgets.
+
+    These sections are additive: when absent the harness behaves exactly as
+    before. When present they must be internally consistent, so a seat can never
+    name a provider that is not defined and a tool can never claim a capability
+    that does not exist.
+    """
+    provider_ids = {p["id"] for p in data.get("providers", [])}
+    if len(provider_ids) != len(data.get("providers", [])):
+        errors.append("duplicate provider ids in registry")
+
+    capability_ids = {c["id"] for c in data.get("capabilities", [])}
+    if len(capability_ids) != len(data.get("capabilities", [])):
+        errors.append("duplicate capability ids in registry")
+
+    if provider_ids:
+        for seat in data["seats"]:
+            provider = seat.get("provider")
+            if provider is not None and provider not in provider_ids:
+                errors.append(
+                    f"seat '{seat['id']}' references unknown provider '{provider}'"
+                )
+
+    for tool in data["tools"]:
+        for cap in tool.get("capabilities", []):
+            if capability_ids and cap not in capability_ids:
+                errors.append(
+                    f"tool '{tool['id']}' references unknown capability '{cap}'"
+                )
+
+    policies = data.get("policies")
+    if policies is not None:
+        ruled: set[str] = set()
+        for rule in policies.get("capability_rules", []):
+            cap = rule["capability"]
+            ruled.add(cap)
+            if capability_ids and cap not in capability_ids:
+                errors.append(
+                    f"policy rule references unknown capability '{cap}'"
+                )
+        # Every declared capability must be governed by an explicit rule so no
+        # capability is silently ungoverned.
+        for cap in capability_ids:
+            if cap not in ruled:
+                errors.append(f"capability '{cap}' has no approval policy rule")
+
+    budgets = data.get("budgets")
+    if budgets is not None:
+        default = budgets.get("default", {})
+        for key in ("max_steps", "max_seconds", "max_cost"):
+            value = default.get(key)
+            if value is not None and value <= 0:
+                errors.append(f"budget default.{key} must be positive; got {value}")
+        retries = default.get("max_retries")
+        if retries is not None and retries < 0:
+            errors.append(f"budget default.max_retries must be >= 0; got {retries}")

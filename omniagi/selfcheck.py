@@ -12,7 +12,17 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
-from . import constitution, docgen, health, integrity, memory
+from . import (
+    constitution,
+    contracts,
+    docgen,
+    health,
+    integrity,
+    memory,
+    policy,
+    trace,
+    worldstate,
+)
 from .hashing import check_manifest
 from .registry import Registry, RegistryError, load_registry
 from .results import CheckResult, Status
@@ -65,6 +75,10 @@ def run_checks(registry: Registry | None = None, probe_network: bool = False) ->
     results.append(check_manifest(reg))
     results.extend(constitution.all_checks(reg))
     results.extend(memory.all_checks())
+    results.append(contracts.check_tool_contracts(reg))
+    results.append(policy.check_capability_approvals(reg))
+    results.append(worldstate.check_world_state())
+    results.append(_check_trace_chain())
     results.append(_check_seat_freshness(reg))
     results.append(health.check_health_probe(reg) if not probe_network else _probe(reg))
     return Report(results)
@@ -108,6 +122,22 @@ def _check_seat_freshness(reg: Registry) -> CheckResult:
     if stale:
         return CheckResult.warned(name, "engine-seat evidence is stale - re-verify the ranking", stale)
     return CheckResult.passed(name, f"all {len(reg.seats)} seats have evidence newer than {limit} days")
+
+
+def _check_trace_chain() -> CheckResult:
+    """Verify that recorded run traces have an intact tamper-evident hash chain."""
+    name = "audit.trace_chain"
+    audits = trace.audit_all()
+    if not audits:
+        return CheckResult.passed(name, "no run traces recorded yet - nothing to audit")
+    broken = [a for a in audits if not a.ok]
+    if broken:
+        details = [f"{a.path}: {'; '.join(a.errors)}" for a in broken]
+        return CheckResult.failed(name, f"{len(broken)}/{len(audits)} traces are tampered", details)
+    total_events = sum(a.events for a in audits)
+    return CheckResult.passed(
+        name, f"{len(audits)} run traces intact ({total_events} chained events)"
+    )
 
 
 def format_report(report: Report, verbose: bool = False) -> str:

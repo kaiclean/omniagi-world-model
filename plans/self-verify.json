@@ -1,0 +1,24 @@
+{
+  "goal": "Observe the harness, verify it, then route and record a follow-up.",
+  "tasks": [
+    {
+      "id": "verify",
+      "description": "Run the full harness self-check and treat any FAIL as a rejected task.",
+      "kind": "verify",
+      "depends_on": []
+    },
+    {
+      "id": "route-followup",
+      "description": "route a plan to harden the highest-risk self-check finding",
+      "kind": "route",
+      "depends_on": ["verify"]
+    },
+    {
+      "id": "record",
+      "description": "Record that a self-verification pass completed.",
+      "kind": "noop",
+      "depends_on": ["route-followup"],
+      "params": {"note": "autonomous self-verification pass recorded"}
+    }
+  ]
+}

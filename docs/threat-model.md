@@ -92,6 +92,17 @@ A malicious dependency or a mutated GitHub Action tag.
 action to a full commit SHA, sets `permissions: contents: read`, and runs
 `pip-audit` on the dev extras.
 
+### T9 — Audit-trail tampering
+An operator or an intruder edits, reorders, or truncates `runs/*.jsonl` to hide
+what an autonomous run actually did.
+
+**Mitigations.** Every trace event is hash-chained: it records its sequence
+number, the SHA-256 `hash` of the previous event, and its own `hash` over the
+remaining fields (`trace._digest`). Altering a field, deleting an event, or
+swapping two lines breaks the chain. `omniagi audit` re-verifies every trace and
+the `audit.trace_chain` self-check fails the build on any tampered trace found
+under `runs/`.
+
 ## Explicit non-goals
 
 - The harness does **not** sandbox the agent from the host. The allowlist raises
