@@ -7,20 +7,20 @@
 ## Registered tools
 
 <!-- omniagi:generated:start id=tools-table -->
-| ID | Tool | Spec | Status | Notes |
-|---|---|---|---|---|
-| `file_read` | Read any harness file | `tools/file_read.md` | active | Use read_file or cat equivalent |
-| `file_write` | Write/overwrite harness file | `tools/file_write.md` | active | Verify by read-back |
-| `file_patch` | Targeted edit | `tools/file_patch.md` | active | Prefer over overwrite when surgical |
-| `shell` | Run a shell command | `tools/shell.md` | active | Allowlisted, timeout-bounded, no shell interpolation. See docs/threat-model.md |
-| `web_search` | Web lookup | `tools/web_search.md` | active | External facts / current state |
-| `model_route` | Route request to engine seat | `tools/model_route.md` | active | Weighted scoring + escalation ladder; omniagi route |
-| `memory_update` | Update MEMORY.md + changelog | `tools/memory_update.md` | active | Deduplicating changelog append; omniagi memory |
-| `tool_register` | Register a new tool (self-extension) | `tools/tool_register.md` | active | See workflows/tool-extension.md; omniagi extend |
-| `missing_tool_detector` | Detect a capability gap during work | `tools/missing_tool_detector.md` | active | Triggers tool-extension workflow |
-| `file_hasher` | Hash a harness file | `tools/file_hasher.md` | active | SHA-256; backs the memory/manifest.json drift check |
-| `summarize_url` | Summarize a URL | `tools/summarize_url.md` | active | Added via the self-extension protocol |
-| `seat_health` | Probe engine seat availability | `tools/seat_health.md` | active | Decides cloud vs local fallback; never simulates a seat |
+| ID | Tool | Spec | Status | Runtime | Notes |
+|---|---|---|---|---|---|
+| `file_read` | Read any harness file | `tools/file_read.md` | active | `file_read` | Executable: omniagi tool run file_read |
+| `file_write` | Write/overwrite harness file | `tools/file_write.md` | active | `file_write` | Executable: omniagi tool run file_write (write is verified by read-back) |
+| `file_patch` | Targeted edit | `tools/file_patch.md` | active | spec only | Prefer over overwrite when surgical |
+| `shell` | Run a shell command | `tools/shell.md` | active | `shell` | Executable: omniagi tool run shell (argv form, allowlisted, timeout) |
+| `web_search` | Web lookup | `tools/web_search.md` | active | spec only | External facts / current state |
+| `model_route` | Route request to engine seat | `tools/model_route.md` | active | spec only | Weighted scoring + escalation ladder; omniagi route |
+| `memory_update` | Update MEMORY.md + changelog | `tools/memory_update.md` | active | spec only | Deduplicating changelog append; omniagi memory |
+| `tool_register` | Register a new tool (self-extension) | `tools/tool_register.md` | active | spec only | See workflows/tool-extension.md; omniagi extend |
+| `missing_tool_detector` | Detect a capability gap during work | `tools/missing_tool_detector.md` | active | spec only | Triggers tool-extension workflow |
+| `file_hasher` | Hash a harness file | `tools/file_hasher.md` | active | spec only | SHA-256; backs the memory/manifest.json drift check |
+| `summarize_url` | Summarize a URL | `tools/summarize_url.md` | active | spec only | Added via the self-extension protocol |
+| `seat_health` | Probe engine seat availability | `tools/seat_health.md` | active | spec only | Decides cloud vs local fallback; never simulates a seat |
 <!-- omniagi:generated:end id=tools-table -->
 
 ## Extension contract

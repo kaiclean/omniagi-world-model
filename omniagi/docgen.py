@@ -49,11 +49,12 @@ def render_tools_table(reg: Registry) -> str:
             tool["name"],
             f"`{tool['spec']}`",
             tool["status"],
+            f"`{tool['handler']}`" if tool.get("handler") else "spec only",
             tool["notes"],
         ]
         for tool in reg.tools
     ]
-    return _table(["ID", "Tool", "Spec", "Status", "Notes"], rows)
+    return _table(["ID", "Tool", "Spec", "Status", "Runtime", "Notes"], rows)
 
 
 def render_tools_reference(reg: Registry) -> str:
@@ -85,6 +86,7 @@ def render_seats_provenance(reg: Registry) -> str:
             str(seat["rank"]),
             seat["engine"],
             seat["tier"],
+            seat["status"],
             seat["confidence"],
             seat["provenance"]["benchmark"],
             seat["provenance"]["source"],
@@ -93,7 +95,7 @@ def render_seats_provenance(reg: Registry) -> str:
         for seat in seats
     ]
     return _table(
-        ["#", "Engine", "Tier", "Confidence", "Benchmark / basis", "Source", "Verified on"],
+        ["#", "Engine", "Tier", "Status", "Confidence", "Benchmark / basis", "Source", "Verified on"],
         rows,
     )
 

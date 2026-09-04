@@ -18,7 +18,21 @@ from omniagi.results import Status
 # -- health --------------------------------------------------------------------
 
 
-def test_local_seats_are_not_assumed_available(registry) -> None:
+@pytest.fixture
+def unquarantined(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Look past the seat quarantine to test the probe mechanics themselves."""
+    monkeypatch.setenv(health.QUARANTINE_OVERRIDE_VAR, "1")
+
+
+def test_a_quarantined_seat_is_never_reported_available(registry) -> None:
+    quarantined = next(seat for seat in registry.seats if seat["status"] == "quarantined")
+    probe = health.probe_seat(quarantined, probe_network=True)
+    assert probe.available is False
+    assert probe.quarantined is True
+    assert "quarantined" in probe.reason
+
+
+def test_local_seats_are_not_assumed_available(registry, unquarantined) -> None:
     """Without a probe, a local seat must report unknown, not available."""
     local = next(seat for seat in registry.seats if seat["tier"] == "local")
     probe = health.probe_seat(local, probe_network=False)
@@ -27,7 +41,7 @@ def test_local_seats_are_not_assumed_available(registry) -> None:
 
 
 def test_cloud_seat_without_credentials_is_unavailable(
-    registry, monkeypatch: pytest.MonkeyPatch
+    registry, unquarantined, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     for var in health.CLOUD_CREDENTIAL_VARS:
         monkeypatch.delenv(var, raising=False)
@@ -38,7 +52,7 @@ def test_cloud_seat_without_credentials_is_unavailable(
 
 
 def test_cloud_seat_with_credential_is_available(
-    registry, monkeypatch: pytest.MonkeyPatch
+    registry, unquarantined, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv(health.CLOUD_CREDENTIAL_VARS[0], "not-a-real-key")
     cloud = next(seat for seat in registry.seats if seat["tier"] != "local")
@@ -59,7 +73,7 @@ def test_selection_returns_none_when_nothing_is_reachable(
 
 
 def test_selection_prefers_the_requested_seat_when_usable(
-    registry, monkeypatch: pytest.MonkeyPatch
+    registry, unquarantined, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv(health.CLOUD_CREDENTIAL_VARS[0], "not-a-real-key")
     cloud = next(seat for seat in registry.seats if seat["tier"] != "local")
@@ -68,7 +82,7 @@ def test_selection_prefers_the_requested_seat_when_usable(
 
 
 def test_selection_falls_back_when_the_preferred_seat_is_down(
-    registry, monkeypatch: pytest.MonkeyPatch
+    registry, unquarantined, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv(health.CLOUD_CREDENTIAL_VARS[0], "not-a-real-key")
     local = next(seat for seat in registry.seats if seat["tier"] == "local")

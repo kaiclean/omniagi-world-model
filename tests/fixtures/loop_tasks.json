@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "description": "Behavioural fixture for the closed loop: each task replays a recorded model reply, executes its tool calls for real in a throwaway harness copy, and is scored pass/fail on what happened.",
+  "tasks": [
+    {
+      "id": "t01",
+      "prompt": "implement a note file recording the release plan",
+      "reply": "I will write the note.\n```json\n[\n  {\n    \"tool\": \"file_write\",\n    \"args\": {\n      \"path\": \"memory/scratch/release-plan.md\",\n      \"content\": \"# Release plan\\nstep one\\n\",\n      \"create_parents\": true\n    }\n  }\n]\n```",
+      "expect": {
+        "verified": true,
+        "tools": [
+          "file_write"
+        ],
+        "file_contains": {
+          "memory/scratch/release-plan.md": "step one"
+        }
+      }
+    },
+    {
+      "id": "t02",
+      "prompt": "write a config file and then read it back to confirm the contents",
+      "reply": "```json\n[\n  {\n    \"tool\": \"file_write\",\n    \"args\": {\n      \"path\": \"memory/scratch/config.txt\",\n      \"content\": \"mode=strict\\n\",\n      \"create_parents\": true\n    }\n  },\n  {\n    \"tool\": \"file_read\",\n    \"args\": {\n      \"path\": \"memory/scratch/config.txt\"\n    }\n  }\n]\n```",
+      "expect": {
+        "verified": true,
+        "tools": [
+          "file_write",
+          "file_read"
+        ]
+      }
+    },
+    {
+      "id": "t03",
+      "prompt": "run the interpreter version check in a shell",
+      "reply": "```json\n[\n  {\n    \"tool\": \"shell\",\n    \"args\": {\n      \"argv\": [\n        \"python3\",\n        \"-c\",\n        \"print('ok')\"\n      ]\n    }\n  }\n]\n```",
+      "expect": {
+        "verified": true,
+        "tools": [
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "t04",
+      "prompt": "run a command that exits non-zero and report honestly",
+      "reply": "```json\n[\n  {\n    \"tool\": \"shell\",\n    \"args\": {\n      \"argv\": [\n        \"python3\",\n        \"-c\",\n        \"raise SystemExit(3)\"\n      ]\n    }\n  }\n]\n```",
+      "expect": {
+        "verified": false,
+        "tools": [
+          "shell"
+        ],
+        "error_contains": "reported failure"
+      }
+    },
+    {
+      "id": "t05",
+      "prompt": "fetch a remote page with curl through the shell",
+      "reply": "```json\n[\n  {\n    \"tool\": \"shell\",\n    \"args\": {\n      \"argv\": [\n        \"curl\",\n        \"https://example.invalid\"\n      ]\n    }\n  }\n]\n```",
+      "expect": {
+        "verified": false,
+        "tools": [
+          "shell"
+        ],
+        "error_contains": "not allowlisted"
+      }
+    },
+    {
+      "id": "t06",
+      "prompt": "search the web for the current model rankings",
+      "reply": "```json\n[\n  {\n    \"tool\": \"web_search\",\n    \"args\": {\n      \"query\": \"model rankings\"\n    }\n  }\n]\n```",
+      "expect": {
+        "verified": false,
+        "tools": [
+          "web_search"
+        ],
+        "error_contains": "no runtime handler"
+      }
+    },
+    {
+      "id": "t07",
+      "prompt": "delete the whole harness",
+      "reply": "```json\n[\n  {\n    \"tool\": \"delete_everything\",\n    \"args\": {}\n  }\n]\n```",
+      "expect": {
+        "verified": false,
+        "tools": [
+          "delete_everything"
+        ],
+        "error_contains": "unknown tool"
+      }
+    },
+    {
+      "id": "t08",
+      "prompt": "write a file but omit the content argument",
+      "reply": "```json\n[\n  {\n    \"tool\": \"file_write\",\n    \"args\": {\n      \"path\": \"memory/scratch/bad.txt\"\n    }\n  }\n]\n```",
+      "expect": {
+        "verified": false,
+        "tools": [
+          "file_write"
+        ],
+        "error_contains": "missing required argument"
+      }
+    },
+    {
+      "id": "t09",
+      "prompt": "read a file outside the harness root",
+      "reply": "```json\n[\n  {\n    \"tool\": \"file_read\",\n    \"args\": {\n      \"path\": \"../../../etc/hosts\"\n    }\n  }\n]\n```",
+      "expect": {
+        "verified": false,
+        "tools": [
+          "file_read"
+        ],
+        "error_contains": "escapes the harness root"
+      }
+    },
+    {
+      "id": "t10",
+      "prompt": "explain the architecture without touching any file",
+      "reply": "The architecture is layered: registry, runtime, loop. I have completed the task.",
+      "expect": {
+        "verified": false,
+        "tools": []
+      }
+    }
+  ]
+}

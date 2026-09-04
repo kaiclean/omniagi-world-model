@@ -110,6 +110,7 @@ def test_registry_change_makes_docs_stale(temp_harness: Path) -> None:
             "spec": "tools/file_read.md",
             "status": "active",
             "script": None,
+            "handler": None,
             "notes": "temporary",
         }
     ))

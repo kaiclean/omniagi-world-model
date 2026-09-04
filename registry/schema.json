@@ -130,6 +130,7 @@
           "spec",
           "status",
           "script",
+          "handler",
           "notes"
         ],
         "additionalProperties": false,
@@ -157,6 +158,13 @@
               "null"
             ]
           },
+          "handler": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Runtime handler in omniagi.tool_runtime.HANDLERS, or null for specification-only tools."
+          },
           "notes": {
             "type": "string"
           }
@@ -172,6 +180,7 @@
           "engine",
           "rank",
           "tier",
+          "status",
           "role",
           "relative_cost",
           "context_tokens",
@@ -196,6 +205,14 @@
               "cloud",
               "local"
             ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "quarantined"
+            ],
+            "description": "Quarantined seats are not callable: their ranking is an unverified catalog claim."
           },
           "role": {
             "type": "string"

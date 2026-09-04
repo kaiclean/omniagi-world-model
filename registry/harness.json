@@ -96,16 +96,18 @@
       "name": "Read any harness file",
       "spec": "tools/file_read.md",
       "status": "active",
-      "script": null,
-      "notes": "Use read_file or cat equivalent"
+      "script": "omniagi/tool_runtime.py",
+      "handler": "file_read",
+      "notes": "Executable: omniagi tool run file_read"
     },
     {
       "id": "file_write",
       "name": "Write/overwrite harness file",
       "spec": "tools/file_write.md",
       "status": "active",
-      "script": null,
-      "notes": "Verify by read-back"
+      "script": "omniagi/tool_runtime.py",
+      "handler": "file_write",
+      "notes": "Executable: omniagi tool run file_write (write is verified by read-back)"
     },
     {
       "id": "file_patch",
@@ -113,6 +115,7 @@
       "spec": "tools/file_patch.md",
       "status": "active",
       "script": null,
+      "handler": null,
       "notes": "Prefer over overwrite when surgical"
     },
     {
@@ -121,7 +124,8 @@
       "spec": "tools/shell.md",
       "status": "active",
       "script": "omniagi/shell.py",
-      "notes": "Allowlisted, timeout-bounded, no shell interpolation. See docs/threat-model.md"
+      "handler": "shell",
+      "notes": "Executable: omniagi tool run shell (argv form, allowlisted, timeout)"
     },
     {
       "id": "web_search",
@@ -129,6 +133,7 @@
       "spec": "tools/web_search.md",
       "status": "active",
       "script": null,
+      "handler": null,
       "notes": "External facts / current state"
     },
     {
@@ -137,6 +142,7 @@
       "spec": "tools/model_route.md",
       "status": "active",
       "script": "omniagi/routing.py",
+      "handler": null,
       "notes": "Weighted scoring + escalation ladder; omniagi route"
     },
     {
@@ -145,6 +151,7 @@
       "spec": "tools/memory_update.md",
       "status": "active",
       "script": "omniagi/memory.py",
+      "handler": null,
       "notes": "Deduplicating changelog append; omniagi memory"
     },
     {
@@ -153,6 +160,7 @@
       "spec": "tools/tool_register.md",
       "status": "active",
       "script": "omniagi/extend.py",
+      "handler": null,
       "notes": "See workflows/tool-extension.md; omniagi extend"
     },
     {
@@ -161,6 +169,7 @@
       "spec": "tools/missing_tool_detector.md",
       "status": "active",
       "script": null,
+      "handler": null,
       "notes": "Triggers tool-extension workflow"
     },
     {
@@ -169,6 +178,7 @@
       "spec": "tools/file_hasher.md",
       "status": "active",
       "script": "omniagi/hashing.py",
+      "handler": null,
       "notes": "SHA-256; backs the memory/manifest.json drift check"
     },
     {
@@ -177,6 +187,7 @@
       "spec": "tools/summarize_url.md",
       "status": "active",
       "script": null,
+      "handler": null,
       "notes": "Added via the self-extension protocol"
     },
     {
@@ -185,6 +196,7 @@
       "spec": "tools/seat_health.md",
       "status": "active",
       "script": "omniagi/health.py",
+      "handler": null,
       "notes": "Decides cloud vs local fallback; never simulates a seat"
     }
   ],
@@ -194,6 +206,7 @@
       "engine": "Qwen3.5-397B-A17B",
       "rank": 1,
       "tier": "cloud",
+      "status": "quarantined",
       "role": "Primary deep reasoner / planner",
       "relative_cost": 8.0,
       "context_tokens": 262144,
@@ -211,6 +224,7 @@
       "engine": "Qwen3-Coder-480B-A35B-Instruct",
       "rank": 2,
       "tier": "cloud",
+      "status": "quarantined",
       "role": "Code and tool-implementation engine",
       "relative_cost": 9.0,
       "context_tokens": 262144,
@@ -228,6 +242,7 @@
       "engine": "Qwen3-235B-A22B-Thinking-2507",
       "rank": 3,
       "tier": "cloud",
+      "status": "quarantined",
       "role": "General high-stakes problem solver",
       "relative_cost": 6.0,
       "context_tokens": 262144,
@@ -245,6 +260,7 @@
       "engine": "NVIDIA Nemotron-3-Ultra",
       "rank": 4,
       "tier": "cloud",
+      "status": "quarantined",
       "role": "Long-horizon agent / research engine",
       "relative_cost": 7.0,
       "context_tokens": 262144,
@@ -262,6 +278,7 @@
       "engine": "Qwen3.5-122B-A10B",
       "rank": 5,
       "tier": "cloud",
+      "status": "quarantined",
       "role": "Workhorse reasoner",
       "relative_cost": 3.0,
       "context_tokens": 262144,
@@ -279,6 +296,7 @@
       "engine": "Qwen3.6-35B-A3B",
       "rank": 6,
       "tier": "cloud",
+      "status": "quarantined",
       "role": "Fast MoE scout",
       "relative_cost": 1.0,
       "context_tokens": 262144,
@@ -296,6 +314,7 @@
       "engine": "Qwen3-Next-80B-A3B",
       "rank": 7,
       "tier": "cloud",
+      "status": "quarantined",
       "role": "High-throughput agent loop engine",
       "relative_cost": 2.0,
       "context_tokens": 262144,
@@ -313,6 +332,7 @@
       "engine": "GLM-4.7-Flash (30B-A3B)",
       "rank": 8,
       "tier": "cloud",
+      "status": "quarantined",
       "role": "Structured agent / dashboard-ops engine",
       "relative_cost": 1.5,
       "context_tokens": 131072,
@@ -330,6 +350,7 @@
       "engine": "DeepSeek-V3.1 / R1",
       "rank": 9,
       "tier": "cloud",
+      "status": "quarantined",
       "role": "Alternate brain for verification / second opinion",
       "relative_cost": 5.0,
       "context_tokens": 131072,
@@ -347,6 +368,7 @@
       "engine": "Qwen3.5-9B-HauhauCS-Aggressive",
       "rank": 10,
       "tier": "local",
+      "status": "quarantined",
       "role": "Local always-on executor when cloud engines are unavailable",
       "relative_cost": 0.0,
       "context_tokens": 131072,

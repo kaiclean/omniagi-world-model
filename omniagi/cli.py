@@ -161,6 +161,76 @@ def _cmd_watch(args: argparse.Namespace) -> int:
     return watchdog_main(argv)
 
 
+def _cmd_tool(args: argparse.Namespace) -> int:
+    from .tool_runtime import run_tool, runnable_tools
+
+    if args.tool_action == "list":
+        print(json.dumps(runnable_tools(), indent=2))
+        return 0
+
+    try:
+        parsed = json.loads(args.args) if args.args else {}
+    except json.JSONDecodeError as exc:
+        print(f"error: --args is not valid JSON: {exc}", file=sys.stderr)
+        return 2
+    if not isinstance(parsed, dict):
+        print("error: --args must be a JSON object", file=sys.stderr)
+        return 2
+
+    result = run_tool(args.tool_id, parsed, timeout=args.timeout)
+    print(json.dumps(result.to_dict(), indent=2))
+    return 0 if result.ok else 1
+
+
+def _cmd_loop(args: argparse.Namespace) -> int:
+    from .loop import LoopError, ScriptedTransport, run_loop
+
+    task = " ".join(args.task).strip()
+    if not task:
+        print("error: no task provided", file=sys.stderr)
+        return 2
+
+    transport = None
+    if args.scripted:
+        from pathlib import Path as _Path
+
+        transport = ScriptedTransport(replies=[_Path(args.scripted).read_text(encoding="utf-8")])
+
+    try:
+        result = run_loop(task, transport=transport, log=not args.no_log)
+    except LoopError as exc:
+        print(f"blocker: {exc}", file=sys.stderr)
+        return 3
+
+    if args.json:
+        print(json.dumps(result.to_dict(), indent=2))
+    else:
+        print(f"task:       {result.task}")
+        print(f"route:      {result.decision.specialist} -> {result.decision.engine}")
+        print(f"model:      {result.model_source}")
+        for call in result.calls:
+            status = "ok" if call.ok else f"FAILED: {call.error}"
+            print(f"  tool {call.tool} ({call.duration_ms}ms): {status}")
+        print(f"verified:   {result.verified} ({result.verdict})")
+        print(f"changelog:  {'appended' if result.logged else 'not written'}")
+    return 0 if result.verified else 1
+
+
+def _cmd_eval(args: argparse.Namespace) -> int:
+    from .evaluate import FixtureError, evaluate, format_report
+
+    try:
+        report = evaluate(args.fixture)
+    except FixtureError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if args.json:
+        print(json.dumps(report.to_dict(), indent=2))
+    else:
+        print(format_report(report))
+    return 0 if report.ok else 1
+
+
 def _cmd_seats(args: argparse.Namespace) -> int:
     from .health import probe_all
 
@@ -239,6 +309,32 @@ def build_parser() -> argparse.ArgumentParser:
     )
     watch.add_argument("--json", action="store_true", help="emit the report as JSON")
     watch.set_defaults(func=_cmd_watch)
+
+    tool = sub.add_parser("tool", help="run a registered tool through the runtime")
+    tool_sub = tool.add_subparsers(dest="tool_action", required=True)
+    tool_list = tool_sub.add_parser("list", help="list executable tools and their argument schemas")
+    tool_list.set_defaults(func=_cmd_tool)
+    tool_run = tool_sub.add_parser("run", help="validate and execute one tool")
+    tool_run.add_argument("tool_id")
+    tool_run.add_argument("--args", default="{}", help="arguments as a JSON object")
+    tool_run.add_argument("--timeout", type=float, default=None, help="override the tool timeout")
+    tool_run.set_defaults(func=_cmd_tool)
+
+    loop = sub.add_parser("loop", help="run the closed loop: route, call a seat, act, verify, log")
+    loop.add_argument("task", nargs="+")
+    loop.add_argument("--json", action="store_true")
+    loop.add_argument("--no-log", action="store_true", help="do not append a changelog entry")
+    loop.add_argument(
+        "--scripted",
+        metavar="FILE",
+        help="replay a recorded model reply instead of calling a seat (marked as scripted)",
+    )
+    loop.set_defaults(func=_cmd_loop)
+
+    evaluation = sub.add_parser("eval", help="score the task fixture: pass/fail per task")
+    evaluation.add_argument("--fixture", help="path to a task fixture JSON file")
+    evaluation.add_argument("--json", action="store_true")
+    evaluation.set_defaults(func=_cmd_eval)
 
     seats = sub.add_parser("seats", help="probe engine-seat availability")
     seats.add_argument("--probe-network", action="store_true")

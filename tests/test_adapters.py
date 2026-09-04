@@ -67,6 +67,10 @@ def stub_seat(monkeypatch: pytest.MonkeyPatch) -> Iterator[type[_StubHandler]]:
 
     monkeypatch.setenv(adapters.BASE_URL_VAR, f"http://{host}:{port}/v1")
     monkeypatch.setenv("OMNIAGI_API_KEY", "test-key-not-a-secret")
+    # Every seat is quarantined until its ranking is verified against a real
+    # endpoint. These tests exercise the *transport*, which is exactly the
+    # deliberate opt-in the quarantine is designed to require.
+    monkeypatch.setenv(health.QUARANTINE_OVERRIDE_VAR, "1")
     try:
         yield _StubHandler
     finally:
@@ -137,8 +141,22 @@ def test_missing_credentials_raise_rather_than_fabricate(
     for var in health.CLOUD_CREDENTIAL_VARS:
         monkeypatch.delenv(var, raising=False)
     with pytest.raises(adapters.SeatUnavailable) as excinfo:
-        adapters.call_seat("say hello", registry.seats[0]["id"])
+        adapters.call_seat("say hello", registry.seats[0]["id"], allow_quarantined=True)
     assert adapters.BASE_URL_VAR in str(excinfo.value)
+
+
+def test_a_quarantined_seat_is_refused_without_an_explicit_opt_in(
+    stub_seat, registry, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The seat table is a catalogue claim until someone actually calls a seat."""
+    monkeypatch.delenv(health.QUARANTINE_OVERRIDE_VAR, raising=False)
+    quarantined = next(seat for seat in registry.seats if seat["status"] == "quarantined")
+    with pytest.raises(adapters.SeatUnavailable) as excinfo:
+        adapters.call_seat("say hello", quarantined["id"])
+    assert "quarantined" in str(excinfo.value)
+
+    response = adapters.call_seat("say hello", quarantined["id"], allow_quarantined=True)
+    assert response.content == "stub reply"
 
 
 def test_unknown_seat_is_refused(stub_seat) -> None:

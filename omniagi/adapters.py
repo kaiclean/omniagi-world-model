@@ -18,7 +18,7 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Any
 
-from .health import select_available_seat
+from .health import is_quarantined, quarantine_override, select_available_seat
 from .registry import Registry, load_registry
 
 BASE_URL_VAR = "OMNIAGI_BASE_URL"
@@ -56,12 +56,19 @@ def call_seat(
     seat_id: str,
     registry: Registry | None = None,
     timeout: float = DEFAULT_TIMEOUT,
+    allow_quarantined: bool = False,
 ) -> SeatResponse:
     """Call one engine seat. Raises rather than simulating."""
     reg = registry or load_registry()
     seat = reg.seat(seat_id)
     if seat is None:
         raise SeatUnavailable(f"unknown seat '{seat_id}'")
+    if is_quarantined(seat) and not (allow_quarantined or quarantine_override()):
+        raise SeatUnavailable(
+            f"seat '{seat_id}' is quarantined: its ranking has never been verified against a "
+            "real endpoint. Verify it, set its registry status to 'active', or pass "
+            "allow_quarantined=True to exercise the transport deliberately."
+        )
 
     base_url = os.environ.get(BASE_URL_VAR)
     key = _api_key()

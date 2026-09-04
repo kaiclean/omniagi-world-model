@@ -66,6 +66,7 @@ def run_checks(registry: Registry | None = None, probe_network: bool = False) ->
     results.extend(constitution.all_checks(reg))
     results.extend(memory.all_checks())
     results.append(_check_seat_freshness(reg))
+    results.append(_check_seat_quarantine(reg))
     results.append(health.check_health_probe(reg) if not probe_network else _probe(reg))
     return Report(results)
 
@@ -108,6 +109,33 @@ def _check_seat_freshness(reg: Registry) -> CheckResult:
     if stale:
         return CheckResult.warned(name, "engine-seat evidence is stale - re-verify the ranking", stale)
     return CheckResult.passed(name, f"all {len(reg.seats)} seats have evidence newer than {limit} days")
+
+
+def _check_seat_quarantine(reg: Registry) -> CheckResult:
+    """A seat may only leave quarantine once its evidence is 'verified'.
+
+    The seat table is a catalogue claim until someone actually calls the seat.
+    Quarantined seats are refused by the adapter, so the harness reports a
+    blocker instead of pretending an unproven engine answered.
+    """
+    name = "evidence.seat_quarantine"
+    errors = [
+        f"seat '{seat['id']}' is active but its evidence is only '{seat['confidence']}' - "
+        "call it against a real endpoint and record the result before activating it"
+        for seat in reg.seats
+        if seat["status"] == "active" and seat["confidence"] != "verified"
+    ]
+    if errors:
+        return CheckResult.failed(name, "a seat left quarantine without verification", errors)
+    quarantined = [seat["id"] for seat in reg.seats if seat["status"] == "quarantined"]
+    if quarantined:
+        return CheckResult.warned(
+            name,
+            f"{len(quarantined)}/{len(reg.seats)} seats are quarantined - "
+            "model calls will report a blocker until a seat is verified",
+            quarantined,
+        )
+    return CheckResult.passed(name, f"all {len(reg.seats)} seats are verified and callable")
 
 
 def format_report(report: Report, verbose: bool = False) -> str:

@@ -106,6 +106,47 @@ def check_scripts(registry: Registry | None = None) -> CheckResult:
     )
 
 
+def check_tool_handlers(registry: Registry | None = None) -> CheckResult:
+    """Registered runtime handlers and implemented handlers must agree.
+
+    A tool that declares a handler nothing implements is a promise the harness
+    cannot keep; an implemented handler nothing registers is unreachable code.
+    """
+    from .tool_runtime import HANDLERS
+
+    reg = registry or load_registry()
+    errors: list[str] = []
+    declared: dict[str, str] = {}
+    for tool in reg.tools:
+        handler = tool.get("handler")
+        if handler is None:
+            continue
+        if handler not in HANDLERS:
+            errors.append(
+                f"tool '{tool['id']}' declares handler '{handler}' "
+                "which omniagi.tool_runtime does not implement"
+            )
+            continue
+        if handler in declared:
+            errors.append(
+                f"handler '{handler}' is claimed by both "
+                f"'{declared[handler]}' and '{tool['id']}'"
+            )
+        declared[handler] = tool["id"]
+        if tool["status"] != "active":
+            errors.append(f"tool '{tool['id']}' is runnable but registered as {tool['status']}")
+
+    for handler in sorted(set(HANDLERS) - set(declared)):
+        errors.append(f"handler '{handler}' is implemented but no registered tool declares it")
+
+    return CheckResult.from_errors(
+        "integrity.tool_handlers",
+        errors,
+        f"{len(declared)} tools are executable through the runtime",
+        "tool registry and tool runtime disagree",
+    )
+
+
 def check_constitution_files(registry: Registry | None = None) -> CheckResult:
     reg = registry or load_registry()
     errors = [rel for rel in reg.constitution_files if not resolve(rel).is_file()]
@@ -197,6 +238,7 @@ def all_checks(registry: Registry | None = None) -> list[CheckResult]:
         check_tool_specs(reg),
         check_agent_specs(reg),
         check_scripts(reg),
+        check_tool_handlers(reg),
         check_markdown_links(reg),
         check_no_hardcoded_paths(),
     ]

@@ -133,6 +133,7 @@ def extend_tool(
             "spec": spec_rel,
             "status": "active",
             "script": script,
+            "handler": None,
             "notes": notes,
         }
     )

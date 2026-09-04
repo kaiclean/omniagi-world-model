@@ -41,6 +41,11 @@ DEFAULT_LOCAL_ENDPOINTS = ("http://127.0.0.1:11434", "http://127.0.0.1:1234")
 
 CONNECT_TIMEOUT_SECONDS = 1.5
 
+#: Seats whose ranking has never been exercised against a real endpoint are
+#: quarantined in the registry. Calling one anyway requires an explicit,
+#: auditable opt-in rather than a silent default.
+QUARANTINE_OVERRIDE_VAR = "OMNIAGI_ALLOW_QUARANTINED_SEATS"
+
 
 @dataclass(frozen=True)
 class SeatHealth:
@@ -49,6 +54,7 @@ class SeatHealth:
     tier: str
     available: bool
     reason: str
+    quarantined: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -57,7 +63,17 @@ class SeatHealth:
             "tier": self.tier,
             "available": self.available,
             "reason": self.reason,
+            "quarantined": self.quarantined,
         }
+
+
+def quarantine_override() -> bool:
+    """True when the operator has explicitly opted into quarantined seats."""
+    return os.environ.get(QUARANTINE_OVERRIDE_VAR, "").strip().lower() in {"1", "true", "yes"}
+
+
+def is_quarantined(seat: dict[str, Any]) -> bool:
+    return str(seat.get("status", "active")) == "quarantined"
 
 
 def _local_endpoints() -> tuple[str, ...]:
@@ -89,6 +105,16 @@ def _cloud_credential() -> str | None:
 
 def probe_seat(seat: dict[str, Any], probe_network: bool = False) -> SeatHealth:
     """Probe one seat. Never assumes availability."""
+    if is_quarantined(seat) and not quarantine_override():
+        return SeatHealth(
+            seat["id"],
+            seat["engine"],
+            seat["tier"],
+            False,
+            "seat is quarantined: its ranking is an unverified catalogue claim; "
+            f"set {QUARANTINE_OVERRIDE_VAR}=1 to call it anyway",
+            quarantined=True,
+        )
     if seat["tier"] == "local":
         endpoints = _local_endpoints()
         if not probe_network:

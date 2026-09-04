@@ -110,18 +110,18 @@ Only **OmniAGI** may change seats, MEMORY, TOOLS, or workflows.
 | `estimated` | Vendor positioning or inference. Treat as a hypothesis, not a fact. |
 
 <!-- omniagi:generated:start id=seats-provenance -->
-| # | Engine | Tier | Confidence | Benchmark / basis | Source | Verified on |
-|---|---|---|---|---|---|---|
-| 1 | Qwen3.5-397B-A17B | cloud | cited | catalog capability flags (tools=true, reasoning=true) | Hermes ascension models_dev_cache.json (~212 providers / ~7493 models) | 2026-09-02 |
-| 2 | Qwen3-Coder-480B-A35B-Instruct | cloud | cited | catalog capability flags (tools=true), agentic coding posture | Hermes ascension models_dev_cache.json | 2026-09-02 |
-| 3 | Qwen3-235B-A22B-Thinking-2507 | cloud | cited | catalog capability flags (tools=true, reasoning=true) | Hermes ascension models_dev_cache.json | 2026-09-02 |
-| 4 | NVIDIA Nemotron-3-Ultra | cloud | estimated | vendor positioning only - no independent measurement | fireworks catalog entry nemotron-3-ultra-nvfp4 | 2026-09-02 |
-| 5 | Qwen3.5-122B-A10B | cloud | cited | catalog capability flags (tools=true, reasoning=true) | Hermes ascension models_dev_cache.json | 2026-09-02 |
-| 6 | Qwen3.6-35B-A3B | cloud | estimated | no independent agentic benchmark recorded | Hermes ascension models_dev_cache.json; local IQ2 experiments in prior research | 2026-09-02 |
-| 7 | Qwen3-Next-80B-A3B | cloud | cited | catalog capability flags (tools=true) | Hermes ascension models_dev_cache.json | 2026-09-02 |
-| 8 | GLM-4.7-Flash (30B-A3B) | cloud | cited | tau2-Bench ~79.5 (reported, not re-run here) | ~/research/agentic-uncensored-16gb-2026.md | 2026-09-02 |
-| 9 | DeepSeek-V3.1 / R1 | cloud | cited | catalog capability flags (reasoning=true) | Hermes ascension models_dev_cache.json | 2026-09-02 |
-| 10 | Qwen3.5-9B-HauhauCS-Aggressive | local | cited | BFCL-V4 66.1, TAU2 79.1 (reported, not re-run here) | ~/research/agentic-uncensored-16gb-2026.md | 2026-09-02 |
+| # | Engine | Tier | Status | Confidence | Benchmark / basis | Source | Verified on |
+|---|---|---|---|---|---|---|---|
+| 1 | Qwen3.5-397B-A17B | cloud | quarantined | cited | catalog capability flags (tools=true, reasoning=true) | Hermes ascension models_dev_cache.json (~212 providers / ~7493 models) | 2026-09-02 |
+| 2 | Qwen3-Coder-480B-A35B-Instruct | cloud | quarantined | cited | catalog capability flags (tools=true), agentic coding posture | Hermes ascension models_dev_cache.json | 2026-09-02 |
+| 3 | Qwen3-235B-A22B-Thinking-2507 | cloud | quarantined | cited | catalog capability flags (tools=true, reasoning=true) | Hermes ascension models_dev_cache.json | 2026-09-02 |
+| 4 | NVIDIA Nemotron-3-Ultra | cloud | quarantined | estimated | vendor positioning only - no independent measurement | fireworks catalog entry nemotron-3-ultra-nvfp4 | 2026-09-02 |
+| 5 | Qwen3.5-122B-A10B | cloud | quarantined | cited | catalog capability flags (tools=true, reasoning=true) | Hermes ascension models_dev_cache.json | 2026-09-02 |
+| 6 | Qwen3.6-35B-A3B | cloud | quarantined | estimated | no independent agentic benchmark recorded | Hermes ascension models_dev_cache.json; local IQ2 experiments in prior research | 2026-09-02 |
+| 7 | Qwen3-Next-80B-A3B | cloud | quarantined | cited | catalog capability flags (tools=true) | Hermes ascension models_dev_cache.json | 2026-09-02 |
+| 8 | GLM-4.7-Flash (30B-A3B) | cloud | quarantined | cited | tau2-Bench ~79.5 (reported, not re-run here) | ~/research/agentic-uncensored-16gb-2026.md | 2026-09-02 |
+| 9 | DeepSeek-V3.1 / R1 | cloud | quarantined | cited | catalog capability flags (reasoning=true) | Hermes ascension models_dev_cache.json | 2026-09-02 |
+| 10 | Qwen3.5-9B-HauhauCS-Aggressive | local | quarantined | cited | BFCL-V4 66.1, TAU2 79.1 (reported, not re-run here) | ~/research/agentic-uncensored-16gb-2026.md | 2026-09-02 |
 <!-- omniagi:generated:end id=seats-provenance -->
 
 Re-verify a seat by updating its `provenance.verified_on` (and `confidence`, if
