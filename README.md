@@ -1,7 +1,12 @@
-# OmniAGI World Model Harness
+# OmniAGI Harness
 
-A single-master, self-extending agent world model — where every claim about the
+A single-master, self-extending **agent harness** — where every claim about the
 system is checked by code rather than asserted in prose.
+
+> **Naming.** This is a harness, not a world model: it routes tasks, runs tools
+> and verifies outcomes. It does not predict the next state of anything. The
+> repository slug still says `world-model`; the artefact does not
+> ([ADR 0004](docs/adr/0004-harness-not-world-model.md)).
 
 > Exactly **one** master: **OmniAGI**. Top-10 MoE/agentic engines are owned
 > seats, not peer AGIs. That is not a slogan; it is
@@ -15,6 +20,9 @@ python3 -m pip install -e ".[dev]"
 
 omniagi check                        # verify the harness (read-only, idempotent)
 omniagi route "fix the failing test" --explain
+omniagi tool list                    # tools that actually run, with their schemas
+omniagi tool run file_read --args '{"path": "LICENSE"}'
+omniagi eval                         # score the 10-task behavioural fixture
 omniagi extend --demo                # real self-extension, in a temp harness copy
 ```
 
@@ -33,8 +41,53 @@ If it ever dirties the tree, that is a bug.
 | `omniagi memory` | Audit durable memory for expiry and hygiene. |
 | `omniagi watch --once` | One watchdog health check; without `--once` it loops with backoff. See [deploy/](deploy/README.md). |
 | `omniagi seats` | List engine seats with provenance and availability. |
+| `omniagi tool list` / `omniagi tool run <id>` | Execute a registered tool: schema-validated args, timeout, JSON result. |
+| `omniagi loop <task>` | The closed loop: route → seat call → tool calls → verify → changelog. |
+| `omniagi eval` | Replay the task fixture and score every task pass/fail. |
 
 The legacy `scripts/*.py` entry points still work as thin wrappers.
+
+## The closed loop
+
+`omniagi loop "<task>"` runs one full pass and reports what actually happened:
+
+1. **route** the task to a specialist and an engine seat (weighted scoring),
+2. **call** that seat over an OpenAI-compatible endpoint,
+3. **act** — every `{"tool": ..., "args": {...}}` the model emits is dispatched
+   through the registry runtime: schema-validated, timed out, JSON result,
+4. **verify** — a pass requires at least one tool call and zero failures; a
+   non-zero exit or a failed read-back is never rendered as success,
+5. **log** one changelog line recording the outcome, pass *or* fail.
+
+The model contract is one JSON object per tool call, so a 7B local model can
+satisfy it. With no seat reachable the loop exits `3` with a blocker instead of
+inventing output.
+
+Three tools are executable today — `file_read`, `file_write` (verified by
+read-back) and `shell` (argv form, allowlisted, bounded). The rest of the
+registry is marked `spec only` in `TOOLS.md` and is refused at dispatch: a tool
+that cannot run says so.
+
+## Does it work? Ten tasks say so
+
+`omniagi eval` replays `tests/fixtures/loop_tasks.json` — ten tasks, each with a
+recorded model reply, executed for real in a throwaway harness copy and scored
+on behaviour: files written, exit codes, refusals. Six expect success, four
+expect a specific refusal (non-allowlisted command, unregistered tool, invalid
+arguments, a path escaping the harness root). It is not a check that the
+markdown still has a "Verify" heading.
+
+## Engine seats are quarantined
+
+All ten seats ship `quarantined`: their ranking comes from a model catalogue,
+and none has ever answered a request from this harness. Quarantined seats are
+reported unavailable and refused by the adapter, so the harness reports a
+blocker rather than routing work to an unproven engine. The *transport* is
+proven — `tests/test_adapters.py` runs the full request/response cycle against a
+stub OpenAI-compatible server on localhost, on by default. Promoting a seat
+requires calling it for real and recording the evidence; `omniagi check` fails
+if an active seat is backed by anything weaker
+([ADR 0005](docs/adr/0005-seat-quarantine.md)).
 
 ## How it works
 
@@ -83,6 +136,8 @@ Every push runs, across Python 3.10–3.13 on Ubuntu and macOS:
 - the full test suite with coverage;
 - `ruff`, `mypy`, and a dependency audit;
 - `omniagi check` and `omniagi docs --check`;
+- `omniagi eval` — the ten-task behavioural fixture;
+- `omniagi tool run` against a real file, asserting the JSON result;
 - an assertion that the hasher emits **64 hexadecimal characters** and exits
   non-zero on a missing file — the previous CI checked only the exit status, and
   the tool it "verified" printed an error and exited `0`;

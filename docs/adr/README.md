@@ -13,6 +13,8 @@ decision.
 | [0001](0001-single-master-authority.md) | Single-master authority | Accepted |
 | [0002](0002-registry-as-single-source-of-truth.md) | Registry as single source of truth | Accepted |
 | [0003](0003-tools-fail-loudly.md) | Tools fail loudly | Accepted |
+| [0004](0004-harness-not-world-model.md) | This repository is a harness, not a world model | Accepted |
+| [0005](0005-seat-quarantine.md) | Engine seats are quarantined until they are actually called | Accepted |
 
 ## Template
 

@@ -1,11 +1,11 @@
 {
   "algorithm": "sha256",
   "files": {
-    "MEMORY.md": "7d306253e1a5ec8958d03e3e558b46eb6fa7d164596a0ad824351b11d77c7592",
+    "MEMORY.md": "5115a49750adf96508f0bf5b53a948b294cd786a63569971f1db2ddb23cb55d4",
     "OmniAGI.md": "7c7ab84add108dc81327a149b0683e6925205b151bf8e734618e93e5486ac996",
     "TOOLS.md": "29886eeb8d5d2e7b76f0bbbe6a3dc22c22bac8e6567850075a4f3948d78d47c3",
     "WORLD_AGENTS.md": "835636e429d1ac6b85fa0ab37ddfd3697cc9408b1d8f5e9f2b1b0b5fd7e7e2c4",
-    "workflows/agent-loop.md": "3e63c269c560b7019f0fe4af05fd0429060b4905425dd029fc473a96f7ee76ec",
+    "workflows/agent-loop.md": "5718ce30677a46e168231f22152a0e1f3bdc0291539ec160a9a4f653ee647583",
     "workflows/memory-consolidation.md": "697a49cc6f3d33ffc5f43c1a94b0e688506aa814198d9aa6c550b625ec50b6ee",
     "workflows/model-routing.md": "8fc1a70f0f80d8cd1e68a4ed153389088fad97542797636e659ea27b6d832566",
     "workflows/tool-extension.md": "b14184a4ae8f160322949969c6f5f908df8d7cf1507f95acce2e2c2dfdd881b9"

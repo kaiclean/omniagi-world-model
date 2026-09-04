@@ -17,6 +17,7 @@ surface. Threat model: `docs/threat-model.md`.
 - `{argv, exit_code, stdout, stderr, timed_out, ok}`
 
 ## How to invoke
+- CLI: `omniagi tool run shell --args '{"argv": ["git", "status", "--short"]}'`
 - Python: `from omniagi.shell import run; run(["git", "status", "--short"])`
 
 ## Guarantees
@@ -28,4 +29,6 @@ surface. Threat model: `docs/threat-model.md`.
 
 ## Verification
 - Check `exit_code == 0` for success; a non-allowlisted program raises
-  `ShellError` before anything is executed.
+  `ShellError` before anything is executed. Through the runtime a non-zero exit
+  is reported as `ok: false` with the captured stdout/stderr retained, so a
+  failing command can never be logged as a success.

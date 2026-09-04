@@ -181,3 +181,63 @@ def test_module_entry_point_works_as_a_subprocess(repo_root: Path) -> None:
     )
     assert completed.returncode == 0, completed.stdout + completed.stderr
     assert "RESULT: PASS" in completed.stdout
+
+
+# -- tool runtime, loop and fixture commands -----------------------------------
+
+
+def test_tool_list_reports_executable_tools(temp_harness: Path, capsys) -> None:
+    assert main(["tool", "list"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert {tool["id"] for tool in payload} == {"file_read", "file_write", "shell"}
+
+
+def test_tool_run_returns_a_json_result(temp_harness: Path, capsys) -> None:
+    assert main(["tool", "run", "file_read", "--args", '{"path": "LICENSE"}']) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is True
+    assert "MIT" in payload["result"]["content"]
+
+
+def test_tool_run_exits_nonzero_when_the_tool_fails(temp_harness: Path, capsys) -> None:
+    assert main(["tool", "run", "file_read", "--args", '{"path": "nope.md"}']) == 1
+    assert json.loads(capsys.readouterr().out)["ok"] is False
+
+
+def test_tool_run_rejects_malformed_arguments(temp_harness: Path, capsys) -> None:
+    assert main(["tool", "run", "file_read", "--args", "not-json"]) == 2
+
+
+def test_loop_reports_a_blocker_when_no_seat_is_reachable(
+    temp_harness: Path, capsys, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from omniagi import health
+
+    for var in health.CLOUD_CREDENTIAL_VARS:
+        monkeypatch.delenv(var, raising=False)
+    assert main(["loop", "do", "something"]) == 3
+    assert "blocker" in capsys.readouterr().err
+
+
+def test_loop_replays_a_scripted_reply_and_verifies_it(temp_harness: Path, capsys) -> None:
+    reply = temp_harness / "reply.txt"
+    reply.write_text(
+        '```json\n[{"tool": "file_write", "args": '
+        '{"path": "memory/scratch/cli.md", "content": "x\\n", "create_parents": true}}]\n```',
+        encoding="utf-8",
+    )
+    assert main(["loop", "write a scratch note", "--scripted", str(reply), "--no-log"]) == 0
+    out = capsys.readouterr().out
+    assert "verified:   True" in out
+    assert (temp_harness / "memory" / "scratch" / "cli.md").exists()
+
+
+def test_eval_scores_the_fixture(temp_harness: Path, capsys) -> None:
+    assert main(["eval", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["result"] == "PASS"
+    assert payload["total"] == 10
+
+
+def test_eval_reports_a_missing_fixture(temp_harness: Path, capsys) -> None:
+    assert main(["eval", "--fixture", str(temp_harness / "nope.json")]) == 2

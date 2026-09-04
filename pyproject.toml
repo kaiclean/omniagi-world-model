@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "omniagi"
 version = "1.0.0"
-description = "OmniAGI world-model harness: a single-master, self-extending, self-verifying agent harness."
+description = "OmniAGI harness: a single-master, self-extending, self-verifying agent harness with an executable tool runtime and closed loop."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [{ name = "kaiclean" }]
-keywords = ["agents", "world-model", "moe", "routing", "harness"]
+keywords = ["agents", "moe", "routing", "harness", "tools", "agent-loop"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",

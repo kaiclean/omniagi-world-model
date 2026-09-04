@@ -1,6 +1,11 @@
 # Workflow: Agent Loop
 
 > Core execution loop for OmniAGI and all specialist subroutines.
+>
+> **This loop is executed, not just described:** `omniagi loop "<task>"` runs
+> steps 1-6 in `omniagi/loop.py`, dispatching every tool call through the
+> registry runtime (`omniagi/tool_runtime.py`) and refusing to record success
+> without evidence. `omniagi eval` scores it against `tests/fixtures/loop_tasks.json`.
 
 ## Loop
 Repeat until the goal is satisfied or a true unrecoverable blocker is confirmed.
@@ -17,6 +22,9 @@ Repeat until the goal is satisfied or a true unrecoverable blocker is confirmed.
 
 ### 3. Execute
 - Run exactly one action (read/write/patch/shell/model call).
+- Tool calls go through the runtime: `omniagi tool run <id> --args '<json>'`,
+  which validates arguments against the tool schema, bounds the call with a
+  timeout and returns a JSON result.
 - Do not batch multiple mutating steps when verification depends on order.
 
 ### 4. Verify
@@ -38,5 +46,6 @@ Repeat until the goal is satisfied or a true unrecoverable blocker is confirmed.
 - If a capability gap was found, invoke `workflows/tool-extension.md` before continuing.
 
 ## Exit
-- Goal met + every step verified with real evidence.
+- Goal met + every step verified with real evidence (`verified: true` in the
+  loop result requires at least one tool call and zero failures).
 - Emit final verification report (see `OmniAGI.md` success definition).

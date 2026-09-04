@@ -17,3 +17,5 @@ which prefixes the date and skips an identical consecutive entry.
 - 2026-09-02 adapters: reference seat adapter now exercised end-to-end against a stub OpenAI-compatible server (17 tests, coverage omit removed); malformed and non-HTTP responses must raise, never coerce
 - 2026-09-02 deploy: systemd service+timer and launchd plist for the watchdog, validated by tests that parse each unit with the real CLI parser
 - 2026-09-02 cli: 'omniagi watch' gained --max-backoff and --json, found missing by the deploy-unit tests
+- 2026-09-04 closed loop implemented: omniagi loop routes, calls a seat, executes registry tools and verifies before logging
+- 2026-09-04 engine seats ship quarantined until verified against a real endpoint (ADR 0005)

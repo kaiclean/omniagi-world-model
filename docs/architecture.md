@@ -44,9 +44,10 @@ derives everything else from it, and CI enforces the correspondence.
 | Derivation | `docgen` | Render registry data into marked markdown blocks; detect staleness. |
 | Verification | `integrity`, `constitution`, `hashing`, `memory` | Named checks over real filesystem state. |
 | Decision | `routing`, `health` | Which specialist, which seat, is it reachable. |
-| Execution | `shell`, `extend`, `adapters` | Bounded side effects. |
+| Execution | `shell`, `tool_runtime`, `extend`, `adapters` | Bounded side effects; registry-dispatched tool calls. |
+| Loop | `loop`, `evaluate` | The closed pass (route → call → act → verify → log) and its behavioural fixture. |
 | Observation | `trace`, `watchdog` | JSONL run traces; periodic health enforcement (see [deploy/](../deploy/README.md)). |
-| Surface | `cli` | `omniagi <check\|route\|hash\|docs\|extend\|memory\|watch\|seats>`. |
+| Surface | `cli` | `omniagi <check\|route\|hash\|docs\|extend\|memory\|watch\|seats\|tool\|loop\|eval>`. |
 
 ## Data flow: routing a task
 
@@ -62,6 +63,24 @@ derives everything else from it, and CI enforces the correspondence.
    the caller receives `None`/`SeatUnavailable` and must report a blocker.
 6. `trace.Trace` appends the decision to `runs/<date>-<id>.jsonl`.
 
+## Data flow: one closed loop pass
+
+1. `loop.run_loop` routes the task, then builds a prompt carrying the argument
+   schema of every executable tool.
+2. The transport calls the routed seat (`SeatTransport`) or replays a recorded
+   reply (`ScriptedTransport`, always labelled `model_source="scripted"`).
+3. `loop.parse_tool_calls` extracts `{"tool", "args"}` objects from the reply —
+   fenced or bare, `name`/`arguments` accepted too.
+4. `tool_runtime.run_tool` resolves each call through the registry, validates
+   arguments against the tool schema, runs the handler under a wall-clock
+   timeout and returns a JSON `ToolResult`.
+5. Verification: at least one call, zero failures. Anything else is a fail with
+   a stated reason.
+6. One changelog line records the outcome — pass or fail.
+
+`evaluate.evaluate` replays `tests/fixtures/loop_tasks.json` through that exact
+path inside a throwaway harness copy and scores each task.
+
 ## Invariants CI enforces
 
 1. Exactly one master, structurally — with negative tests proving the check
@@ -75,6 +94,11 @@ derives everything else from it, and CI enforces the correspondence.
 7. Every relative markdown reference resolves, or is an exemption *with a
    documented reason*.
 8. Tools fail loudly — no error sentinels returned as values.
+9. Registry and tool runtime agree: no tool declares a handler nothing
+   implements, and no handler is unreachable from the registry.
+10. Every task in the behavioural fixture behaves exactly as specified.
+11. No engine seat is `active` unless its evidence is `verified` — an unproven
+    seat stays quarantined and uncallable.
 
 ## Design decisions worth knowing
 

@@ -98,6 +98,32 @@ jobs:
             exit 1
           fi
 
+      - name: Task fixture (ten tasks, scored pass/fail)
+        run: omniagi eval
+
+      - name: The tool runtime actually runs a tool
+        # Assert on the JSON result, not the exit status: a runtime that could
+        # not run anything would still exit 0 if we only checked the status.
+        run: |
+          set -euo pipefail
+          omniagi tool run file_read --args '{"path": "LICENSE", "max_bytes": 32}' > result.json
+          cat result.json
+          python3 -c "
+          import json
+          payload = json.load(open('result.json'))
+          assert payload['ok'] is True, payload
+          assert payload['result']['content'], payload
+          assert payload['result']['truncated'] is True, payload
+          "
+          rm result.json
+
+      - name: An unrunnable tool is refused, not faked
+        run: |
+          if omniagi tool run web_search --args '{"query": "anything"}'; then
+            echo "::error::a specification-only tool reported success"
+            exit 1
+          fi
+
       - name: Watchdog single-shot
         run: omniagi watch --once
 
