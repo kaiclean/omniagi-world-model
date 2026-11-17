@@ -1,12 +1,41 @@
 # OmniAGI World Model Harness
 
-A single-master, self-extending agent world model — where every claim about the
-system is checked by code rather than asserted in prose.
+A small, dependency-free Python harness that keeps an agent's description of
+itself (tools, specialists, engine seats, rules) in one machine-readable
+registry, and checks every claim about it with code instead of prose.
 
 > Exactly **one** master: **OmniAGI**. Top-10 MoE/agentic engines are owned
 > seats, not peer AGIs. That is not a slogan; it is
 > [an enforced structural invariant](docs/adr/0001-single-master-authority.md)
 > with tests that prove the check fails when a second master is injected.
+
+## The problem it solves
+
+Agent setups usually live in markdown: the tool list in one file, the rules in
+another, the model list in a third. The copies drift apart and nothing breaks
+when they do. This repo makes that drift a CI failure:
+
+- `registry/harness.json` is the single source of truth; every table in the docs
+  is generated from it (`omniagi docs --check` fails when stale).
+- Each non-negotiable is a named check function, so a failure says which rule
+  broke (`omniagi check`).
+- Tools fail loudly: no simulated success, no error strings returned as values
+  ([ADR 0003](docs/adr/0003-tools-fail-loudly.md)).
+- Engine seats are called only with real credentials; without them the harness
+  raises `SeatUnavailable` instead of inventing an answer
+  (`omniagi/adapters.py`).
+
+## Status and limits
+
+- Version 1.0.0, classifier "Beta" (`pyproject.toml`). About 4,900 lines of
+  Python, 11 test files, CI on Python 3.10 to 3.13 (Ubuntu and macOS).
+- The Top-10 engine ranking in `registry/harness.json` rests on catalog
+  capability flags and vendor positioning; several entries state "no independent
+  measurement". Treat it as a starting shortlist, not a benchmark.
+- Only one reference adapter exists (OpenAI-compatible chat completions,
+  `omniagi/adapters.py`); it needs `OMNIAGI_BASE_URL` and an API key variable.
+- No human-approval gate for outward actions is implemented yet. Shell access is
+  allowlist-based (`omniagi/shell.py`), see [docs/threat-model.md](docs/threat-model.md).
 
 ## Quick start
 
