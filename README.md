@@ -29,13 +29,13 @@ when they do. This repo makes that drift a CI failure:
 
 - Version 1.0.0, classifier "Beta" (`pyproject.toml`). About 4,900 lines of
   Python, 11 test files, CI on Python 3.10 to 3.13 (Ubuntu and macOS).
-- The Top-10 engine ranking in `registry/harness.json` rests on catalog
-  capability flags and vendor positioning; several entries state "no independent
-  measurement". Treat it as a starting shortlist, not a benchmark.
-- Only one reference adapter exists (OpenAI-compatible chat completions,
+- Scope: the Top-10 engine list in `registry/harness.json` is a shortlist built
+  from catalog capability flags, with provenance recorded per seat. It is not a
+  benchmark.
+- One reference adapter (OpenAI-compatible chat completions,
   `omniagi/adapters.py`); it needs `OMNIAGI_BASE_URL` and an API key variable.
-- No human-approval gate for outward actions is implemented yet. Shell access is
-  allowlist-based (`omniagi/shell.py`), see [docs/threat-model.md](docs/threat-model.md).
+- Shell access is allowlist-based (`omniagi/shell.py`); the harness is not a
+  sandbox, see [docs/threat-model.md](docs/threat-model.md).
 
 ## Quick start
 
@@ -122,7 +122,8 @@ Every push runs, across Python 3.10–3.13 on Ubuntu and macOS:
 Start with [docs/tutorial-add-a-tool.md](docs/tutorial-add-a-tool.md), then read
 [CONTRIBUTING.md](CONTRIBUTING.md). Constitutional changes require an
 [ADR](docs/adr/README.md). Security posture is documented in
-[docs/threat-model.md](docs/threat-model.md).
+[docs/threat-model.md](docs/threat-model.md); to report a problem, see
+[SECURITY.md](SECURITY.md).
 
 ## Origin
 
