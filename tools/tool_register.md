@@ -14,7 +14,7 @@ is achievable rather than aspirational.
 - an `ExtensionReport` listing each protocol step and the verification result
 
 ## How to invoke
-- CLI: `omniagi extend <tool_id> --purpose "<one line>"`
+- CLI: `omniagi extend <tool_id> --purpose "<one line>" --approve` (without `--approve` it refuses before writing anything)
 - Demo in a throwaway harness copy: `omniagi extend --demo`
 - Python: `from omniagi.extend import extend_tool`
 

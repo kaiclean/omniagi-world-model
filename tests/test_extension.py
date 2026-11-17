@@ -23,6 +23,7 @@ def _add(tool_id: str = "line_counter") -> extend.ExtensionReport:
         tool_id=tool_id,
         name="Count lines in a harness file",
         purpose="Report the line count of a harness file",
+        approved=True,
     )
 
 
@@ -57,7 +58,7 @@ def test_round_trip_logs_exactly_one_changelog_line(temp_harness: Path) -> None:
 
 def test_registering_an_existing_tool_is_refused(temp_harness: Path) -> None:
     with pytest.raises(extend.ExtensionError) as excinfo:
-        extend.extend_tool("file_hasher", "dup", "duplicate")
+        extend.extend_tool("file_hasher", "dup", "duplicate", approved=True)
     assert "already registered" in str(excinfo.value)
 
 
@@ -72,12 +73,12 @@ def test_orphan_spec_blocks_registration(temp_harness: Path) -> None:
 @pytest.mark.parametrize("bad_id", ["Line-Counter", "line counter", "LineCounter", "line/counter", ""])
 def test_invalid_tool_ids_are_refused(temp_harness: Path, bad_id: str) -> None:
     with pytest.raises(extend.ExtensionError):
-        extend.extend_tool(bad_id, "x", "y")
+        extend.extend_tool(bad_id, "x", "y", approved=True)
 
 
 def test_missing_script_aborts_and_leaves_no_partial_state(temp_harness: Path) -> None:
     with pytest.raises(extend.ExtensionError):
-        extend.extend_tool("line_counter", "x", "y", script="omniagi/nope.py")
+        extend.extend_tool("line_counter", "x", "y", script="omniagi/nope.py", approved=True)
 
     assert not (temp_harness / "tools" / "line_counter.md").exists()
     data = json.loads(registry_path().read_text(encoding="utf-8"))
@@ -99,3 +100,11 @@ def test_temporary_harness_restores_the_previous_root(repo_root: Path) -> None:
     with extend.temporary_harness() as temporary:
         assert harness_root() == temporary.resolve()
     assert harness_root() == before
+
+
+def test_extension_without_approval_is_refused_and_writes_nothing(temp_harness: Path) -> None:
+    registry_before = registry_path().read_bytes()
+    with pytest.raises(extend.ExtensionError, match="not approved"):
+        extend.extend_tool("line_counter", "Count lines", "Count lines")
+    assert registry_path().read_bytes() == registry_before
+    assert not (temp_harness / "tools" / "line_counter.md").exists()

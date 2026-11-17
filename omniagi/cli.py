@@ -111,6 +111,7 @@ def _cmd_extend(args: argparse.Namespace) -> int:
                 name=args.name or args.tool_id.replace("_", " ").title(),
                 purpose=args.purpose,
                 script=args.script,
+                approved=args.approve,
             )
         )
     except ExtensionError as exc:
@@ -213,6 +214,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--demo",
         action="store_true",
         help="run the protocol in a temporary harness copy (never touches this tree)",
+    )
+    extend.add_argument(
+        "--approve",
+        action="store_true",
+        help="confirm that this run may modify the registry, specs and generated docs",
     )
     extend.set_defaults(func=_cmd_extend)
 

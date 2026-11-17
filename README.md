@@ -58,7 +58,7 @@ If it ever dirties the tree, that is a bug.
 | `omniagi route <task>` | Score the task, pick a specialist and an engine seat. `--explain` shows why. |
 | `omniagi hash <path>` | SHA-256 a harness file. `--write-manifest` / `--verify-manifest` for the constitution manifest. |
 | `omniagi docs` | Regenerate every table derived from the registry. `--check` fails when stale. |
-| `omniagi extend <tool_id>` | Run the six-step self-extension protocol. `--demo` runs it in a throwaway copy. |
+| `omniagi extend <tool_id> --approve` | Run the six-step self-extension protocol; it modifies the registry, so it needs `--approve`. `--demo` runs it in a throwaway copy without it. |
 | `omniagi memory` | Audit durable memory for expiry and hygiene. |
 | `omniagi watch --once` | One watchdog health check; without `--once` it loops with backoff. See [deploy/](deploy/README.md). |
 | `omniagi seats` | List engine seats with provenance and availability. |

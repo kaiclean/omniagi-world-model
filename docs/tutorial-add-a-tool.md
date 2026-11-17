@@ -65,10 +65,12 @@ Two things matter more than the logic:
 omniagi extend line_counter \
   --name "Count lines in a harness file" \
   --purpose "Report the line count of a harness file" \
-  --script omniagi/line_counter.py
+  --script omniagi/line_counter.py \
+  --approve
 ```
 
-That one command performs all six protocol steps: detect, specify, implement,
+`--approve` is your explicit confirmation that the run may modify the registry and
+specs; without it the command refuses before writing anything. It performs all six protocol steps: detect, specify, implement,
 register, verify by read-back, log. If verification fails it raises and
 deliberately does **not** write a changelog entry claiming success.
 
