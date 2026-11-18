@@ -140,3 +140,10 @@ omniagi hash --write-manifest
 
 Never delete silently. Set `"status": "deprecated"` in `registry/harness.json`,
 move the spec to `tools/archive/`, run `omniagi docs`, and log the reason.
+
+## Approval for outward actions
+
+Anything with an effect beyond the harness is gated the same way as `--approve`:
+`omniagi.shell.run(..., approved=True)` for commands and `approved=True` for
+changelog writes outside the harness root. Tools you add should take the same
+parameter and refuse before doing any work when it is missing.

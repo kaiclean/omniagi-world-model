@@ -105,12 +105,19 @@ def run(
     timeout: float = DEFAULT_TIMEOUT_SECONDS,
     allow: Sequence[str] | None = None,
     env: dict[str, str] | None = None,
+    approved: bool = False,
 ) -> ShellResult:
     """Run an allowlisted command as an argument vector.
+
+    Running a process is an action with effect outside this call, so it needs
+    ``approved=True`` as the record of an explicit human decision; without it
+    nothing is validated or started.
 
     ``argv`` must be a sequence; a bare string is rejected, because accepting
     one is how shell-injection bugs are born.
     """
+    if not approved:
+        raise ShellError("shell command not approved: pass approved=True after a human decision")
     if isinstance(argv, str):
         raise ShellError(
             "pass the command as a list of arguments, not a string - "

@@ -34,8 +34,9 @@ when they do. This repo makes that drift a CI failure:
   benchmark.
 - One reference adapter (OpenAI-compatible chat completions,
   `omniagi/adapters.py`); it needs `OMNIAGI_BASE_URL` and an API key variable.
-- Shell access is allowlist-based (`omniagi/shell.py`); the harness is not a
-  sandbox, see [docs/threat-model.md](docs/threat-model.md).
+- Shell access is allowlist-based and each call needs `approved=True`
+  (`omniagi/shell.py`); writes outside the harness root need the same approval
+  (`omniagi/paths.py`). The harness is not a sandbox, see [docs/threat-model.md](docs/threat-model.md).
 
 ## Quick start
 

@@ -20,7 +20,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from .paths import resolve
+from .paths import guard_write, resolve
 from .results import CheckResult
 
 MEMORY_FILE = "MEMORY.md"
@@ -176,9 +176,9 @@ def check_memory_hygiene() -> CheckResult:
 # -- changelog -----------------------------------------------------------------
 
 
-def dedupe_changelog(path: Path | None = None) -> int:
+def dedupe_changelog(path: Path | None = None, approved: bool = False) -> int:
     """Collapse identical consecutive changelog lines. Returns lines removed."""
-    target = path or resolve(CHANGELOG_FILE)
+    target = guard_write(path or resolve(CHANGELOG_FILE), approved)
     if not target.is_file():
         return 0
     lines = target.read_text(encoding="utf-8").splitlines()
@@ -194,12 +194,17 @@ def dedupe_changelog(path: Path | None = None) -> int:
     return removed
 
 
-def append_changelog(message: str, path: Path | None = None, today: date | None = None) -> bool:
+def append_changelog(
+    message: str,
+    path: Path | None = None,
+    today: date | None = None,
+    approved: bool = False,
+) -> bool:
     """Append a dated changelog line, skipping an identical consecutive entry.
 
     Returns ``True`` when a line was written.
     """
-    target = path or resolve(CHANGELOG_FILE)
+    target = guard_write(path or resolve(CHANGELOG_FILE), approved)
     target.parent.mkdir(parents=True, exist_ok=True)
     entry = f"- {(today or date.today()).isoformat()} {message.strip()}"
     existing = target.read_text(encoding="utf-8").splitlines() if target.is_file() else []

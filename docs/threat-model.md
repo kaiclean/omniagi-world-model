@@ -25,6 +25,9 @@ rejects a bare string. `shell=True` is never used, so there is no metacharacter
 interpretation. Executables are restricted to a small allowlist
 (`DEFAULT_ALLOWLIST`, extendable through `OMNIAGI_SHELL_ALLOWLIST` for operators,
 not for the agent). Every call has a timeout with a hard ceiling.
+Every call also needs an explicit `approved=True`, the record of a human decision;
+without it nothing is validated or started. Writes that leave the harness root
+(`paths.guard_write`) need the same flag.
 
 ### T2 — Path traversal
 A tool that accepts a path can be pointed at `~/.ssh/id_rsa` or
