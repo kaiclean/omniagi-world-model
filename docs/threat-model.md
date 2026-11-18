@@ -70,6 +70,10 @@ the package for `return "Error..."` patterns. When no engine seat is reachable,
 `adapters.call_with_fallback` raises `SeatUnavailable` rather than returning
 placeholder text.
 
+Seat calls cost money, so `adapters.call_seat` spends from a per-process budget
+(default 20, `OMNIAGI_MAX_SEAT_CALLS`; `0` disables calls) and raises
+`SeatBudgetExceeded` before sending any request once it is used up.
+
 ### T6 — Credential leakage
 Keys committed to the repository, or echoed into logs and traces.
 

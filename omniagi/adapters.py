@@ -25,6 +25,11 @@ BASE_URL_VAR = "OMNIAGI_BASE_URL"
 API_KEY_VARS = ("OMNIAGI_API_KEY", "OPENAI_API_KEY", "OPENROUTER_API_KEY")
 DEFAULT_TIMEOUT = 60.0
 
+#: Seat calls cost money, so each process gets a bounded budget. Raise it
+#: deliberately with ``OMNIAGI_MAX_SEAT_CALLS``; ``0`` disables seat calls.
+MAX_CALLS_VAR = "OMNIAGI_MAX_SEAT_CALLS"
+DEFAULT_MAX_CALLS = 20
+
 SYSTEM_PROMPT = (
     "You are OmniAGI operating under OmniAGI.md. You are the sole master of this "
     "world-model harness. Never claim a tool succeeded without real evidence."
@@ -33,6 +38,41 @@ SYSTEM_PROMPT = (
 
 class SeatUnavailable(RuntimeError):
     """Raised when no engine seat can actually be called."""
+
+
+class SeatBudgetExceeded(SeatUnavailable):
+    """Raised when the per-process seat-call budget is used up."""
+
+
+_calls_made = 0
+
+
+def call_budget() -> int:
+    raw = os.environ.get(MAX_CALLS_VAR, "")
+    try:
+        return max(0, int(raw)) if raw.strip() else DEFAULT_MAX_CALLS
+    except ValueError:
+        return DEFAULT_MAX_CALLS
+
+
+def calls_made() -> int:
+    return _calls_made
+
+
+def reset_call_budget() -> None:
+    """Forget the calls counted so far (a new session, or a test)."""
+    global _calls_made
+    _calls_made = 0
+
+
+def _spend_call() -> None:
+    global _calls_made
+    limit = call_budget()
+    if _calls_made >= limit:
+        raise SeatBudgetExceeded(
+            f"seat-call budget of {limit} used up; raise {MAX_CALLS_VAR} to allow more"
+        )
+    _calls_made += 1
 
 
 @dataclass(frozen=True)
@@ -71,6 +111,7 @@ def call_seat(
             + ", ".join(API_KEY_VARS)
         )
 
+    _spend_call()
     payload = json.dumps(
         {
             "model": seat["engine"],

@@ -46,3 +46,11 @@ def temp_harness(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 def _no_traces(monkeypatch: pytest.MonkeyPatch) -> None:
     """Tests must not write run traces into the repository."""
     monkeypatch.setenv("OMNIAGI_NO_TRACE", "1")
+
+
+@pytest.fixture(autouse=True)
+def _fresh_seat_budget() -> None:
+    """Each test starts with an unspent seat-call budget."""
+    from omniagi import adapters
+
+    adapters.reset_call_budget()
