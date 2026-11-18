@@ -42,12 +42,12 @@ leaves a dirty diff, that is a bug.
 Use the protocol rather than editing files by hand:
 
 ```bash
-omniagi extend my_new_tool --purpose "what it does" --script omniagi/my_new_tool.py
+omniagi extend my_new_tool --purpose "what it does" --script omniagi/my_new_tool.py --approve
 ```
 
 That writes the spec, registers it, regenerates every derived table, verifies by
 read-back and appends a deduplicated changelog line. The long-form walkthrough is
-in `docs/tutorial-add-a-tool.md`.
+in `docs/how-to/add-a-tool.md`.
 
 ## Changing the constitution
 

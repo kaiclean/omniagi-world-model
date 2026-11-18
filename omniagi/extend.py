@@ -90,8 +90,20 @@ def extend_tool(
     purpose: str,
     notes: str = "Added via the self-extension protocol",
     script: str | None = None,
+    approved: bool = False,
 ) -> ExtensionReport:
-    """Run the full protocol for ``tool_id`` against the current harness root."""
+    """Run the full protocol for ``tool_id`` against the current harness root.
+
+    The protocol writes to the registry, specs and generated docs, so it runs
+    only with an explicit ``approved=True`` from the caller (a human decision
+    passed through ``omniagi extend --approve``). The check happens before any
+    file is touched.
+    """
+    if not approved:
+        raise ExtensionError(
+            "extension not approved: it modifies the registry and specs; "
+            "re-run with explicit approval (--approve)"
+        )
     if not tool_id.replace("_", "").isalnum() or not tool_id.islower():
         raise ExtensionError(
             f"invalid tool id {tool_id!r}: use lowercase letters, digits and underscores"
@@ -197,4 +209,5 @@ def demo() -> ExtensionReport:
             name="Summarize a URL (self-extension demo)",
             purpose="Fetch a URL and return a compact summary",
             notes="Created by the self-extension demo in a temporary harness",
+            approved=True,  # the demo only ever writes into a throwaway copy
         )

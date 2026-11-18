@@ -36,3 +36,23 @@ def relative(path: Path) -> str:
         return str(Path(path).resolve().relative_to(harness_root()))
     except ValueError:
         return str(path)
+
+
+class WriteNotApproved(PermissionError):
+    """Raised when a write outside the harness root lacks explicit approval."""
+
+
+def guard_write(target: Path, approved: bool = False) -> Path:
+    """Return ``target`` resolved, refusing writes outside the harness root.
+
+    Writes inside the workspace are routine. A write that leaves it has an
+    effect beyond this repository, so the caller must pass ``approved=True`` as
+    the record of an explicit human decision.
+    """
+    resolved = Path(target).expanduser().resolve()
+    root = harness_root()
+    if resolved != root and root not in resolved.parents and not approved:
+        raise WriteNotApproved(
+            f"write outside the harness root needs explicit approval: {resolved}"
+        )
+    return resolved

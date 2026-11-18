@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 
 from omniagi import memory
+from omniagi.paths import WriteNotApproved
 from omniagi.results import Status
 
 
@@ -126,3 +127,20 @@ def test_check_changelog_detects_injected_duplicates(temp_harness: Path) -> None
     path = temp_harness / "memory" / "CHANGELOG.md"
     path.write_text("- 2026-01-01 dup\n- 2026-01-01 dup\n", encoding="utf-8")
     assert memory.check_changelog().status is Status.FAIL
+
+
+def test_changelog_write_outside_the_workspace_needs_approval(
+    temp_harness: Path, tmp_path_factory: pytest.TempPathFactory
+) -> None:
+    outside = tmp_path_factory.mktemp("elsewhere") / "CHANGELOG.md"
+    with pytest.raises(WriteNotApproved):
+        memory.append_changelog("tool_added: x", path=outside)
+    assert not outside.exists()
+    with pytest.raises(WriteNotApproved):
+        memory.dedupe_changelog(path=outside)
+    assert memory.append_changelog("tool_added: x", path=outside, approved=True) is True
+    assert outside.is_file()
+
+
+def test_changelog_write_inside_the_workspace_needs_no_approval(temp_harness: Path) -> None:
+    assert memory.append_changelog("tool_added: y", path=temp_harness / "memory" / "CHANGELOG.md")

@@ -201,3 +201,36 @@ def test_live_seat_call(registry) -> None:  # pragma: no cover - opt-in only
         pytest.skip("no engine seat is reachable")
     response = adapters.call_seat("Reply with the single word: ready.", seat.seat_id)
     assert response.content.strip()
+
+
+def test_calls_beyond_the_budget_are_refused_before_any_request(
+    stub_seat, registry, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(adapters.MAX_CALLS_VAR, "2")
+    seat_id = registry.seats[0]["id"]
+    adapters.call_seat("one", seat_id)
+    adapters.call_seat("two", seat_id)
+    stub_seat.captured = {}
+    with pytest.raises(adapters.SeatBudgetExceeded):
+        adapters.call_seat("three", seat_id)
+    assert stub_seat.captured == {}
+    assert adapters.calls_made() == 2
+
+
+def test_budget_default_is_conservative_and_zero_disables_calls(
+    stub_seat, registry, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv(adapters.MAX_CALLS_VAR, raising=False)
+    assert adapters.call_budget() == adapters.DEFAULT_MAX_CALLS == 20
+    monkeypatch.setenv(adapters.MAX_CALLS_VAR, "not-a-number")
+    assert adapters.call_budget() == 20
+    monkeypatch.setenv(adapters.MAX_CALLS_VAR, "0")
+    with pytest.raises(adapters.SeatBudgetExceeded):
+        adapters.call_seat("x", registry.seats[0]["id"])
+
+
+def test_reset_restores_the_budget(stub_seat, registry, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(adapters.MAX_CALLS_VAR, "1")
+    adapters.call_seat("one", registry.seats[0]["id"])
+    adapters.reset_call_budget()
+    adapters.call_seat("again", registry.seats[0]["id"])

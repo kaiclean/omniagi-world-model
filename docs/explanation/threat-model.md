@@ -25,6 +25,9 @@ rejects a bare string. `shell=True` is never used, so there is no metacharacter
 interpretation. Executables are restricted to a small allowlist
 (`DEFAULT_ALLOWLIST`, extendable through `OMNIAGI_SHELL_ALLOWLIST` for operators,
 not for the agent). Every call has a timeout with a hard ceiling.
+Every call also needs an explicit `approved=True`, the record of a human decision;
+without it nothing is validated or started. Writes that leave the harness root
+(`paths.guard_write`) need the same flag.
 
 ### T2 — Path traversal
 A tool that accepts a path can be pointed at `~/.ssh/id_rsa` or
@@ -66,6 +69,10 @@ completely broken tool.
 the package for `return "Error..."` patterns. When no engine seat is reachable,
 `adapters.call_with_fallback` raises `SeatUnavailable` rather than returning
 placeholder text.
+
+Seat calls cost money, so `adapters.call_seat` spends from a per-process budget
+(default 20, `OMNIAGI_MAX_SEAT_CALLS`; `0` disables calls) and raises
+`SeatBudgetExceeded` before sending any request once it is used up.
 
 ### T6 — Credential leakage
 Keys committed to the repository, or echoed into logs and traces.

@@ -121,7 +121,7 @@
       "spec": "tools/shell.md",
       "status": "active",
       "script": "omniagi/shell.py",
-      "notes": "Allowlisted, timeout-bounded, no shell interpolation. See docs/threat-model.md"
+      "notes": "Allowlisted, timeout-bounded, no shell interpolation. See docs/explanation/threat-model.md"
     },
     {
       "id": "web_search",
@@ -499,15 +499,15 @@
     },
     {
       "path": "omniagi/line_counter.py",
-      "reason": "hypothetical example file created by the reader while following docs/tutorial-add-a-tool.md"
+      "reason": "hypothetical example file created by the reader while following docs/how-to/add-a-tool.md"
     },
     {
       "path": "tools/line_counter.md",
-      "reason": "hypothetical example file created by the reader while following docs/tutorial-add-a-tool.md"
+      "reason": "hypothetical example file created by the reader while following docs/how-to/add-a-tool.md"
     },
     {
       "path": "tests/test_line_counter.py",
-      "reason": "hypothetical example file created by the reader while following docs/tutorial-add-a-tool.md"
+      "reason": "hypothetical example file created by the reader while following docs/how-to/add-a-tool.md"
     }
   ]
 }

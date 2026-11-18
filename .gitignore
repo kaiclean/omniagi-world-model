@@ -21,3 +21,10 @@ dist/
 .mypy_cache/
 .coverage
 htmlcov/
+
+# Env files and scratch output
+.env.*
+!.env.example
+*.tmp
+scratch/
+tmp/

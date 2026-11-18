@@ -16,6 +16,7 @@ import pytest
 
 from omniagi import docgen
 from omniagi.cli import main
+from omniagi.registry import load_registry
 from omniagi.results import Status
 
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
@@ -90,7 +91,18 @@ def test_route_without_a_task_is_a_usage_error(temp_harness: Path) -> None:
 
 
 def test_extend_missing_tool_id_is_rejected(temp_harness: Path) -> None:
-    assert main(["extend", "Bad-Id", "--purpose", "x"]) == 1
+    assert main(["extend", "Bad-Id", "--purpose", "x", "--approve"]) == 1
+
+
+def test_extend_cli_requires_explicit_approval(temp_harness: Path, capsys) -> None:
+    assert main(["extend", "line_counter", "--purpose", "x"]) == 1
+    assert "not approved" in capsys.readouterr().err
+    assert load_registry().tool("line_counter") is None
+
+
+def test_extend_cli_with_approval_registers_the_tool(temp_harness: Path) -> None:
+    assert main(["extend", "line_counter", "--purpose", "x", "--approve"]) == 0
+    assert load_registry().tool("line_counter") is not None
 
 
 def test_memory_command_reports_status(temp_harness: Path, capsys) -> None:
