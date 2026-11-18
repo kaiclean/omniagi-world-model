@@ -4,7 +4,7 @@ Run an allowlisted command as an argument vector.
 
 ## Purpose
 Execute builds, git operations and scripts without opening a shell-injection
-surface. Threat model: `docs/threat-model.md`.
+surface. Threat model: `docs/explanation/threat-model.md`.
 
 ## Inputs
 - argv (list[str]): the command. A bare string is **rejected** — accepting one

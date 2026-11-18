@@ -1,6 +1,6 @@
 """Hardened shell tool.
 
-Threat model in ``docs/threat-model.md``. Guarantees:
+Threat model in ``docs/explanation/threat-model.md``. Guarantees:
 
 * **No shell interpolation.** Commands are argument vectors executed without
   ``shell=True``, so there is no metacharacter injection surface.

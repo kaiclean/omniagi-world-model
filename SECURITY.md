@@ -15,7 +15,7 @@ public issue.
 
 ## Threat model in short
 
-The full analysis is in [docs/threat-model.md](docs/threat-model.md). In brief:
+The full analysis is in [docs/explanation/threat-model.md](docs/explanation/threat-model.md). In brief:
 
 - Shell execution takes an argument vector, never `shell=True`, only
   allowlisted executables, with a timeout (`omniagi/shell.py`).

@@ -37,7 +37,7 @@ when they do. This repo makes that drift a CI failure:
   Seat calls are capped per process (default 20, `OMNIAGI_MAX_SEAT_CALLS`).
 - Shell access is allowlist-based and each call needs `approved=True`
   (`omniagi/shell.py`); writes outside the harness root need the same approval
-  (`omniagi/paths.py`). The harness is not a sandbox, see [docs/threat-model.md](docs/threat-model.md).
+  (`omniagi/paths.py`). The harness is not a sandbox, see [docs/explanation/threat-model.md](docs/explanation/threat-model.md).
 
 ## Quick start
 
@@ -74,7 +74,7 @@ seats, routing rules and the non-negotiables. Every markdown table describing
 that data is generated from it, and CI fails when a generated block is stale —
 so the registry and the documentation cannot silently disagree.
 
-See [docs/architecture.md](docs/architecture.md).
+See [docs/explanation/architecture.md](docs/explanation/architecture.md).
 
 ## Layout
 
@@ -89,7 +89,7 @@ TOOLS.md + tools/          # tool registry + specs
 workflows/                 # agent-loop, tool-extension, model-routing, memory-consolidation
 harnesses/                 # Top-10 agentic MoE engine seats
 agents/                    # specialist subroutines (owned by master)
-docs/                      # architecture, threat model, ADRs, tutorial
+docs/                      # how-to, reference, explanation (see docs/README.md), ADRs
 deploy/                    # systemd and launchd units for the watchdog
 scripts/                   # thin wrappers over the omniagi CLI
 references/                # generated evidence mirrors
@@ -121,10 +121,10 @@ Every push runs, across Python 3.10–3.13 on Ubuntu and macOS:
 
 ## Contributing
 
-Start with [docs/tutorial-add-a-tool.md](docs/tutorial-add-a-tool.md), then read
+Start with [docs/how-to/add-a-tool.md](docs/how-to/add-a-tool.md), then read
 [CONTRIBUTING.md](CONTRIBUTING.md). Constitutional changes require an
 [ADR](docs/adr/README.md). Security posture is documented in
-[docs/threat-model.md](docs/threat-model.md); to report a problem, see
+[docs/explanation/threat-model.md](docs/explanation/threat-model.md); to report a problem, see
 [SECURITY.md](SECURITY.md).
 
 ## Origin

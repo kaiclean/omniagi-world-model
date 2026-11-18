@@ -1,4 +1,4 @@
-"""Layer boundaries from ``docs/architecture.md``, enforced on the source.
+"""Layer boundaries from ``docs/explanation/architecture.md``, enforced on the source.
 
 A module may import only from its own layer or a lower one. A backward import
 (for example ``routing`` importing ``cli``) fails here, so the layering in the
@@ -15,7 +15,7 @@ import pytest
 
 PACKAGE = Path(__file__).resolve().parent.parent / "omniagi"
 
-# Lower number = lower layer. Names follow the table in docs/architecture.md;
+# Lower number = lower layer. Names follow the table in docs/explanation/architecture.md;
 # ``selfcheck`` is the orchestrator that runs the verification checks.
 LAYERS: dict[str, int] = {
     "__init__": 0,

@@ -12,7 +12,7 @@
 | `file_read` | Read any harness file | `tools/file_read.md` | active | Use read_file or cat equivalent |
 | `file_write` | Write/overwrite harness file | `tools/file_write.md` | active | Verify by read-back |
 | `file_patch` | Targeted edit | `tools/file_patch.md` | active | Prefer over overwrite when surgical |
-| `shell` | Run a shell command | `tools/shell.md` | active | Allowlisted, timeout-bounded, no shell interpolation. See docs/threat-model.md |
+| `shell` | Run a shell command | `tools/shell.md` | active | Allowlisted, timeout-bounded, no shell interpolation. See docs/explanation/threat-model.md |
 | `web_search` | Web lookup | `tools/web_search.md` | active | External facts / current state |
 | `model_route` | Route request to engine seat | `tools/model_route.md` | active | Weighted scoring + escalation ladder; omniagi route |
 | `memory_update` | Update MEMORY.md + changelog | `tools/memory_update.md` | active | Deduplicating changelog append; omniagi memory |

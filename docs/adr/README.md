@@ -13,6 +13,7 @@ decision.
 | [0001](0001-single-master-authority.md) | Single-master authority | Accepted |
 | [0002](0002-registry-as-single-source-of-truth.md) | Registry as single source of truth | Accepted |
 | [0003](0003-tools-fail-loudly.md) | Tools fail loudly | Accepted |
+| [0004](0004-documentation-layout.md) | Documentation layout | Accepted |
 
 ## Template
 
